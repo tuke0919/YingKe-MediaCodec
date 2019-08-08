@@ -18,7 +18,11 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".simple.MediaMuxerActivity"></activity>
-        <activity android:name=".videoplayer.MediaCodecPlayerActivity" />
+        <activity
+            android:name=".videoplayer.MediaCodecPlayerActivity"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+            />
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -11,5 +11,8 @@ public class MediaCodecPlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_media_codec_player);
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction().add(R.id.container, new PlayerFragment()).commit();
+        }
     }
 }

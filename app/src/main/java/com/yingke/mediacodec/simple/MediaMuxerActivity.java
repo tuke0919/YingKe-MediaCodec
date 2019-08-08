@@ -18,7 +18,7 @@ public class MediaMuxerActivity extends AppCompatActivity {
     private TextView mMuxerBtn;
     private TextView mMuxerLog;
 
-    private String mVideoNetworkUrl = "http://mov.bn.netease.com/open-movie/nos/mp4/2016/12/15/FC7CH3GGQ_shd.mp4";
+    private String mVideoNetworkUrl = "http://mov.bn.netease.com/open-movie/nos/mp4/2016/12/15/fc7ch3ggq_shd.mp4";
     private String mOutputVideoPath = Environment.getExternalStorageDirectory().getPath()+"/temp.mp4";
 
     private StringBuilder logSb = new StringBuilder();
