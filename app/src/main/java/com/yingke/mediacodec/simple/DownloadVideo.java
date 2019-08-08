@@ -1,15 +1,23 @@
 package com.yingke.mediacodec.simple;
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
+import android.util.Log;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
- * 功能：
+ * 功能：MediaExtractor + MediaMuxer  分离抽取 ，合成视频
  * </p>
  * <p>Copyright corp.netease.com 2018 All right reserved </p>
  *
@@ -20,14 +28,77 @@ import java.nio.ByteBuffer;
  * <p>
  */
 public class DownloadVideo {
+    private static String TAG = DownloadVideo.class.getSimpleName();
 
     private String mVideoNetworkUrl;
     private String mVideoOutputPath ;
+
+    private boolean mOutputFileSuccess;
+
+    private Thread mMuxerThread;
 
     public DownloadVideo() {
 
     }
 
+    public DownloadVideo(String mVideoNetworkUrl, String mVideoOutputPath) {
+        this.mVideoNetworkUrl = mVideoNetworkUrl;
+        this.mVideoOutputPath = mVideoOutputPath;
+
+        File outputFile = new File(mVideoOutputPath);
+        if (outputFile.exists()) {
+            outputFile.delete();
+        }
+        try {
+            mOutputFileSuccess = outputFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Log.e(TAG, "doDownload : mVideoNetworkUrl =  " + mVideoNetworkUrl + " mVideoOutputPath = " + mVideoOutputPath );
+
+        if (mCallback != null) {
+            mCallback.onTextCallback("mVideoNetworkUrl =  " + mVideoNetworkUrl);
+            mCallback.onTextCallback("mVideoOutputPath =  " + mVideoOutputPath);
+        }
+
+    }
+
+    /**
+     * 开始
+     */
+    public void start() {
+        if (!mOutputFileSuccess) {
+            Log.e(TAG, "start : create output file error " );
+
+            if (mCallback != null) {
+                mCallback.onTextCallback("start : create output file error ");
+            }
+
+            return;
+        }
+
+        mMuxerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    doDownload();
+
+                } catch (InterruptedIOException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        mMuxerThread.start();
+    }
+
+
+    /**
+     * @throws IOException
+     */
     private void doDownload() throws IOException {
         int maxVideoIntputSize = 0;
         int maxAudioIntputSize = 0;
@@ -48,19 +119,62 @@ public class DownloadVideo {
 
         if (videoExtractorTrackIndex != -1) {
             MediaFormat videoTrackFormat = videoExtractor.getTrackFormat(videoExtractorTrackIndex);
+
+            Log.e(TAG, "doDownload : videoTrackFormat =  " );
+            if (mCallback != null) {
+                mCallback.onTextCallback("doDownload : videoTrackFormat = ");
+            }
+
+            outputMediaFormat(videoTrackFormat);
+
             videoMuxerTrackIndex = mediaMuxer.addTrack(videoTrackFormat);
             maxVideoIntputSize = videoTrackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
             videoFrameRate = videoTrackFormat.getInteger(MediaFormat.KEY_FRAME_RATE);
+
+            Log.e(TAG, "doDownload :"
+                    + " maxVideoIntputSize =  "  + maxVideoIntputSize
+                    + " videoFrameRate = " + videoFrameRate
+                    + " videoMuxerTrackIndex = " + videoMuxerTrackIndex);
+
+            if (mCallback != null) {
+                mCallback.onTextCallback("doDownload: ");
+                mCallback.onTextCallback("maxVideoIntputSize =  "  + maxVideoIntputSize);
+                mCallback.onTextCallback("videoFrameRate = " + videoFrameRate);
+                mCallback.onTextCallback("videoMuxerTrackIndex = " + videoMuxerTrackIndex);
+            }
         }
 
         if (audioExtractorTrackIndex != -1) {
             MediaFormat audioTrackFormat = audioExtractor.getTrackFormat(audioExtractorTrackIndex);
-            audioMuxerTrackIndex = mediaMuxer.addTrack(audioTrackFormat);
 
+            Log.e(TAG, "doDownload : audioTrackFormat =  " );
+            if (mCallback != null) {
+                mCallback.onTextCallback("doDownload : videoTrackFormat = ");
+            }
+
+            outputMediaFormat(audioTrackFormat);
+
+            audioMuxerTrackIndex = mediaMuxer.addTrack(audioTrackFormat);
             maxAudioIntputSize = audioTrackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
 
+            Log.e(TAG, "doDownload :"
+                    + " audioMuxerTrackIndex =  "  + audioMuxerTrackIndex
+                    + " maxAudioIntputSize = " + maxAudioIntputSize);
+
+            if (mCallback != null) {
+                mCallback.onTextCallback("doDownload: ");
+                mCallback.onTextCallback("audioMuxerTrackIndex =  "  + audioMuxerTrackIndex);
+                mCallback.onTextCallback("maxAudioIntputSize = " + maxAudioIntputSize);
+            }
         }
 
+        Log.e(TAG, "doDownload : mediaMuxer.start()" );
+        if (mCallback != null) {
+            mCallback.onTextCallback("doDownload : mediaMuxer.start() ");
+        }
+
+
+        // 开始合成
         mediaMuxer.start();
 
         if (videoMuxerTrackIndex != -1) {
@@ -68,7 +182,7 @@ public class DownloadVideo {
             bufferInfo.presentationTimeUs = 0;
 
             ByteBuffer buffer = ByteBuffer.allocate(maxVideoIntputSize);
-            while (true) {
+            while (!mMuxerThread.isInterrupted()) {
                 int sampleSize = videoExtractor.readSampleData(buffer, 0);
                 if (sampleSize < 0) {
                     break;
@@ -78,6 +192,20 @@ public class DownloadVideo {
                 bufferInfo.flags = MediaCodec.BUFFER_FLAG_SYNC_FRAME;
                 bufferInfo.presentationTimeUs += 1000 * 1000 / videoFrameRate;
 
+                Log.e(TAG, "doDownload : videoMuxer = "
+                        + " offset = " + bufferInfo.offset
+                        + " size = " + bufferInfo.size
+                        + " flags = " + bufferInfo.flags
+                        + " presentationTimeUs = " + bufferInfo.presentationTimeUs);
+
+                if (mCallback != null) {
+                    mCallback.onTextCallback("doDownload: videoMuxer =  ");
+                    mCallback.onTextCallback("offset = " + bufferInfo.offset);
+                    mCallback.onTextCallback("size = " + bufferInfo.size);
+                    mCallback.onTextCallback("flags = " + bufferInfo.flags);
+                    mCallback.onTextCallback("presentationTimeUs = " + bufferInfo.presentationTimeUs);
+                }
+
                 mediaMuxer.writeSampleData(videoMuxerTrackIndex, buffer, bufferInfo);
 
                 boolean videoExtractorDone = videoExtractor.advance();
@@ -86,13 +214,17 @@ public class DownloadVideo {
                 }
             }
         }
+        Log.e(TAG, "doDownload : videoMuxer end" );
+        if (mCallback != null) {
+            mCallback.onTextCallback("doDownload : videoMuxer end ");
+        }
 
         if (audioMuxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             bufferInfo.presentationTimeUs = 0;
 
             ByteBuffer buffer = ByteBuffer.allocate(maxAudioIntputSize);
-            while (true) {
+            while (!mMuxerThread.isInterrupted()) {
                 int sampleSize = audioExtractor.readSampleData(buffer, 0);
                 if (sampleSize < 0) {
                     break;
@@ -100,7 +232,22 @@ public class DownloadVideo {
                 bufferInfo.offset = 0;
                 bufferInfo.size = sampleSize;
                 bufferInfo.flags = audioExtractor.getSampleFlags();
-                bufferInfo.presentationTimeUs += 1000 * 1000 / videoFrameRate;
+                bufferInfo.presentationTimeUs = audioExtractor.getSampleTime();
+
+                Log.e(TAG, "doDownload : audioMuxer = "
+                        + " offset = " + bufferInfo.offset
+                        + " size = " + bufferInfo.size
+                        + " flags = " + bufferInfo.flags
+                        + " presentationTimeUs = " + bufferInfo.presentationTimeUs);
+
+                if (mCallback != null) {
+                    mCallback.onTextCallback("doDownload: audioMuxer =  ");
+                    mCallback.onTextCallback("offset = " + bufferInfo.offset);
+                    mCallback.onTextCallback("size = " + bufferInfo.size);
+                    mCallback.onTextCallback("flags = " + bufferInfo.flags);
+                    mCallback.onTextCallback("presentationTimeUs = " + bufferInfo.presentationTimeUs);
+                }
+
 
                 mediaMuxer.writeSampleData(audioMuxerTrackIndex, buffer, bufferInfo);
 
@@ -109,6 +256,10 @@ public class DownloadVideo {
                     break;
                 }
             }
+        }
+        Log.e(TAG, "doDownload : audioMuxer end" );
+        if (mCallback != null) {
+            mCallback.onTextCallback("doDownload : audioMuxer end ");
         }
 
         videoExtractor.release();
@@ -141,6 +292,9 @@ public class DownloadVideo {
         for (int index = 0 ; index < mediaExtractor.getTrackCount(); index ++) {
             MediaFormat mediaFormat  = mediaExtractor.getTrackFormat(index);
 
+            Log.e(TAG, "getAndSelectTrackIndex " + " index = " + index);
+            outputMediaFormat(mediaFormat);
+
             if (isVideo) {
                 if (isVideoTrack(mediaFormat)) {
                     mediaExtractor.selectTrack(index);
@@ -154,6 +308,48 @@ public class DownloadVideo {
             }
         }
         return -1;
+    }
+
+    /**
+     * @param mediaFormat
+     */
+    private void outputMediaFormat(MediaFormat mediaFormat) {
+        Class clazz = MediaFormat.class;
+        try {
+            Method getMap = clazz.getDeclaredMethod("getMap");
+            //获取私有权限
+            getMap.setAccessible(true);
+            HashMap<String, Object> map = (HashMap<String, Object>) getMap.invoke(mediaFormat);
+
+            if (map != null) {
+                Set<String> keySet = map.keySet();
+                for (String key : keySet) {
+                     Object value = map.get(key);
+                     String strValue = "";
+                     if (value instanceof Integer) {
+                         strValue = ((Integer) value).intValue() + "";
+                     } else if (value instanceof Float) {
+                         strValue = ((Float) value).floatValue() + "";
+                     } else if (value instanceof Long) {
+                         strValue = ((Long) value).longValue() + "";
+                     } else if (value instanceof String){
+                         strValue = (String) value;
+                     }
+
+                    Log.e(TAG, "outputMediaFormat " + " key = " + key + " value = " + value);
+                    if (mCallback != null) {
+                        mCallback.onTextCallback("outputMediaFormat " + " key = " + key + " value = " + value);
+                    }
+                }
+            }
+
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -172,6 +368,25 @@ public class DownloadVideo {
      */
     public boolean isAudioTrack(MediaFormat mediaFormat) {
         return mediaFormat != null && mediaFormat.getString(MediaFormat.KEY_MIME).startsWith("audio/");
+    }
+
+    private OnProgressCallback mCallback;
+
+    public void setCallback(OnProgressCallback mCallback) {
+        this.mCallback = mCallback;
+    }
+
+    public interface OnProgressCallback{
+        /**
+         * @param text
+         */
+        void onTextCallback(String text);
+    }
+
+    public void onDestroy() {
+        if (mMuxerThread != null) {
+            mMuxerThread.interrupt();
+        }
     }
 
 
