@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AspectRatioFrameLayout">
+        <attr name="resize_mode"/>
+    </declare-styleable>
+
+    <attr format="enum" name="resize_mode">
+        <enum name="fit" value="0"/>
+        <enum name="fixed_width" value="1"/>
+        <enum name="fixed_height" value="2"/>
+        <enum name="fill" value="3"/>
+        <enum name="zoom" value="4"/>
+    </attr>
+
+    <attr format="enum" name="surface_type">
+        <enum name="none" value="0"/>
+        <enum name="surface_view" value="1"/>
+        <enum name="texture_view" value="2"/>
+    </attr>
+
+    <declare-styleable name="MediaCodecPlayerView">
+        <attr name="surface_type"/>
+        <attr name="resize_mode"/>
+    </declare-styleable>
+
+
+</resources>

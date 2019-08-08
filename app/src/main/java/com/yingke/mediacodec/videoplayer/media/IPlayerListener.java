@@ -3,7 +3,7 @@ package com.yingke.mediacodec.videoplayer.media;
 /**
  * callback interface
  */
-public interface IFrameCallback {
+public interface IPlayerListener {
 	/**
 	 * called when preparing finshed
 	 */

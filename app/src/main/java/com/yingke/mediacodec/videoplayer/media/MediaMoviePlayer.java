@@ -8,8 +8,6 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -20,7 +18,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * 功能：
+ * 功能：使用MediaCodec 解码器实现播放视频
  * </p>
  * <p>Copyright corp.netease.com 2018 All right reserved </p>
  *
@@ -55,7 +53,7 @@ public class MediaMoviePlayer {
 
     private Context mContext;
 
-    private final IFrameCallback mCallback;
+    private final IPlayerListener mCallback;
     private final boolean mAudioEnabled;
 
 
@@ -127,7 +125,7 @@ public class MediaMoviePlayer {
 
     public MediaMoviePlayer(Context context,
                             final Surface outputSurface,
-                            final IFrameCallback callback,
+                            final IPlayerListener callback,
                             final boolean audioEnable) {
 
         if (DEBUG){
@@ -137,7 +135,7 @@ public class MediaMoviePlayer {
         mContext = context;
         mOutputSurface = outputSurface;
         mCallback = callback;
-        mAudioEnabled = audioEnable;
+        mAudioEnabled = true;
         // 开启播放任务
         new Thread(mMoviePlayerTask, TAG).start();
 
@@ -153,14 +151,18 @@ public class MediaMoviePlayer {
 
     /**
      * 请求准备播放
-     * @param srcPath
      */
-    public final void prepare(final String srcPath) {
+    public final void prepare() {
+
         if (DEBUG) {
             Log.v(TAG, "prepare:");
         }
+
+        if (TextUtils.isEmpty(mSourcePath)) {
+            return;
+        }
         synchronized (mSync) {
-            mSourcePath = srcPath;
+//            mSourcePath = srcPath;
             mPlayerRequest = REQUEST_PREPARE;
             mSync.notifyAll();
         }
@@ -730,7 +732,7 @@ public class MediaMoviePlayer {
     /**
      * @param frameCallback
      */
-    private final void handleLoop(final IFrameCallback frameCallback) {
+    private final void handleLoop(final IPlayerListener frameCallback) {
 		if (DEBUG) {
 		    Log.d(TAG, "handleLoop");
         }
@@ -1110,7 +1112,7 @@ public class MediaMoviePlayer {
      * 输出一帧数据到 surface
      * @param frameCallback
      */
-    private final void handleOutputVideo(final IFrameCallback frameCallback) {
+    private final void handleOutputVideo(final IPlayerListener frameCallback) {
     	if (DEBUG) {
     	    Log.v(TAG, "handleOutputVideo:");
         }
@@ -1248,7 +1250,7 @@ public class MediaMoviePlayer {
      * 输出一帧数据到 audioTrack
      * @param frameCallback
      */
-    private final void handleOutputAudio(final IFrameCallback frameCallback) {
+    private final void handleOutputAudio(final IPlayerListener frameCallback) {
 		if (DEBUG) {
 		    Log.v(TAG, "handleOutputAudio:");
         }
@@ -1412,6 +1414,23 @@ public class MediaMoviePlayer {
     public final boolean hasAudio() {
         return mHasAudio;
     }
+
+    /**
+     * 设置地址
+     * @param sourcePath
+     */
+    public void setSourcePath(String sourcePath) {
+        this.mSourcePath = sourcePath;
+    }
+
+    /**
+     * 是否在播放
+     * @return
+     */
+    public boolean isPlaying() {
+        return mIsRunning;
+    }
+
 
 
 }
