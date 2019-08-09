@@ -1,6 +1,5 @@
 package com.yingke.mediacodec.videoplayer.view;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Handler;
@@ -8,6 +7,7 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.google.android.exoplayer2.Player;
 import com.yingke.mediacodec.R;
 import com.yingke.mediacodec.videoplayer.media.IPlayerListener;
 import com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer;
@@ -120,6 +121,40 @@ public class MediaCodecPlayerView extends FrameLayout implements IPlayerView{
         }
         mPlayer = new MediaMoviePlayer(getContext(), mSurface, mIPlayerListener, true);
 
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        if (mPlayer != null && mPlayerControl != null) {
+            switch (ev.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+
+                    break;
+                case MotionEvent.ACTION_MOVE:
+
+                    break;
+                case MotionEvent.ACTION_UP:
+                    togglePlayerControl();
+                    break;
+                case MotionEvent.ACTION_CANCEL:
+
+                    break;
+            }
+
+
+        }
+        return true;
+    }
+
+    /**
+     * 进度条的显示和隐藏
+     */
+    private void togglePlayerControl() {
+        if (mPlayerControl.isShowing()) {
+            mPlayerControl.hide();
+        } else {
+            mPlayerControl.show();
+        }
     }
 
 
@@ -235,8 +270,10 @@ public class MediaCodecPlayerView extends FrameLayout implements IPlayerView{
                 public void run() {
                     // 设置宽高比
                     mRatioFrameLayout.setAspectRatio(aspect);
+                    togglePlayerControl();
                 }
             });
+
             // 播放
             mPlayer.play();
         }

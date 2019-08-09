@@ -1,5 +1,6 @@
 package com.yingke.mediacodec.videoplayer.view;
 
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Loader;
 import android.support.annotation.NonNull;
@@ -13,6 +14,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 import com.yingke.mediacodec.R;
+import com.yingke.mediacodec.videoplayer.PlayerLog;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,6 +34,7 @@ import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.TAG_STATI
  */
 public class MediaCodecPlayerControl extends FrameLayout {
 
+    private boolean mIsShowing;
 
     private ImageButton mPlayBtn;
     private IPlayerView mPlayerView;
@@ -92,6 +95,67 @@ public class MediaCodecPlayerControl extends FrameLayout {
     }
 
     /**
+     * 显示
+     */
+    public void show() {
+        PlayerLog.w("hide()");
+        setAlpha(1);
+        setVisibility(VISIBLE);
+        mIsShowing = true;
+
+        animate().cancel();
+
+        if (mPlayerView != null && mPlayerView.isPlaying()) {
+            hide();
+        }
+
+    }
+
+    /**
+     * 隐藏
+     */
+    public void hide() {
+        PlayerLog.w("hide()");
+
+        postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                animate().alpha(0).setDuration(500).setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        setVisibility(VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        mIsShowing = false;
+                        setVisibility(GONE);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                }).start();
+
+            }
+        }, 1000);
+    }
+
+    /**
+     * @return
+     */
+    public boolean isShowing() {
+        PlayerLog.w("isShowing() = " + mIsShowing);
+        return mIsShowing;
+    }
+
+    /**
      * 设置播放器
      * @param player
      */
@@ -127,12 +191,15 @@ public class MediaCodecPlayerControl extends FrameLayout {
     }
 
     /**
+     * 资源文件拷贝到文件
      * @param path
      * @throws IOException
      */
     private final void prepareSampleMovie(File path) throws IOException {
 
         if (!path.exists()) {
+            mPlayBtn.setImageResource(R.mipmap.icon_loading);
+
             final BufferedInputStream in = new BufferedInputStream(getContext().getResources().openRawResource(R.raw.fc7ch3ggq_shd));
             final BufferedOutputStream out = new BufferedOutputStream(getContext().openFileOutput(path.getName(), Context.MODE_PRIVATE));
             byte[] buf = new byte[8192];
