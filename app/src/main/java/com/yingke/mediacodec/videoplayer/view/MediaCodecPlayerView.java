@@ -6,6 +6,7 @@ import android.content.res.TypedArray;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.SurfaceView;
@@ -17,6 +18,9 @@ import android.widget.FrameLayout;
 import com.yingke.mediacodec.R;
 import com.yingke.mediacodec.videoplayer.media.IPlayerListener;
 import com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer;
+
+import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.DEBUG;
+import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.TAG;
 
 
 /**
@@ -120,41 +124,92 @@ public class MediaCodecPlayerView extends FrameLayout implements IPlayerView{
 
 
     @Override
-    public void start() {
+    public void prepare() {
+        if (DEBUG) {
+            Log.e(TAG, "prepare()" );
+        }
+
         if (mPlayer != null) {
             mPlayer.prepare();
         }
     }
 
     @Override
-    public void pause() {
+    public void start() {
+        if (DEBUG) {
+            Log.e(TAG, "start()" );
+        }
         if (mPlayer != null) {
-            mPlayer.release();
+            mPlayer.resume();
+        }
+    }
+
+    @Override
+    public void pause() {
+        if (DEBUG) {
+            Log.e(TAG, "pause()" );
+        }
+        if (mPlayer != null) {
+            mPlayer.pause();
+        }
+    }
+
+    @Override
+    public void resume() {
+        if (DEBUG) {
+            Log.e(TAG, "pause()" );
+        }
+        if (mPlayer != null) {
+            mPlayer.resume();
         }
     }
 
     @Override
     public String getDuration() {
+        if (DEBUG) {
+            Log.e(TAG, "getDuration()" );
+        }
         return "";
     }
 
     @Override
     public int getCurrentPosition() {
+        if (DEBUG) {
+            Log.e(TAG, "getCurrentPosition()" );
+        }
         return 0;
     }
 
     @Override
+    public boolean isStop() {
+        if (DEBUG) {
+            Log.e(TAG, "isStop()" );
+        }
+        return mPlayer != null && mPlayer.isStop();
+    }
+
+    @Override
     public boolean isPlaying() {
+        if (DEBUG) {
+            Log.e(TAG, "isPlaying()" );
+        }
         return mPlayer != null && mPlayer.isPlaying();
     }
 
     @Override
     public boolean isPaused() {
-        return false;
+        if (DEBUG) {
+            Log.e(TAG, "isPaused()" );
+        }
+        return mPlayer != null && mPlayer.isPaused();
     }
 
     @Override
     public void setVideoPath(String path) {
+        if (DEBUG) {
+            Log.e(TAG, "setVideoPath() mPlayer = " + mPlayer );
+        }
+
        if (mPlayer != null) {
            mPlayer.setSourcePath(path);
        }
@@ -167,6 +222,11 @@ public class MediaCodecPlayerView extends FrameLayout implements IPlayerView{
     private final IPlayerListener mIPlayerListener = new IPlayerListener() {
         @Override
         public void onPrepared() {
+
+            if (DEBUG) {
+                Log.e(TAG, "onPrepared()" );
+            }
+
             // 宽高比
             final float aspect = mPlayer.getWidth() / (float)mPlayer.getHeight();
 
@@ -177,14 +237,15 @@ public class MediaCodecPlayerView extends FrameLayout implements IPlayerView{
                     mRatioFrameLayout.setAspectRatio(aspect);
                 }
             });
-
             // 播放
             mPlayer.play();
         }
 
         @Override
         public void onFinished() {
-            mPlayer = null;
+            if (DEBUG) {
+                Log.e(TAG, "onFinished()" );
+            }
 
             mHandler.post(new Runnable() {
                 @Override

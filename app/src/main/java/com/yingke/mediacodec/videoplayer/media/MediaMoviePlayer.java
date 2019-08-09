@@ -12,6 +12,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
+import com.yingke.mediacodec.videoplayer.PlayerLog;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -47,9 +49,9 @@ public class MediaMoviePlayer {
     private static final int REQUEST_RESUME = 6;
     private static final int REQUEST_QUIT = 9;
 
-    private static final boolean DEBUG = true;
-    private static final String TAG_STATIC = "MediaMoviePlayer:";
-    private final String TAG = TAG_STATIC + getClass().getSimpleName();
+    public static final boolean DEBUG = true;
+    public static final String TAG_STATIC = "MediaMoviePlayer:";
+    public static final String TAG = TAG_STATIC;
 
     private Context mContext;
 
@@ -72,6 +74,10 @@ public class MediaMoviePlayer {
     private long mDuration;
     // 媒体信息
     private MediaMetadataRetriever mMediaMetadata;
+
+    private final Object mPauseResumeSync = new Object();
+
+    private volatile boolean mIsPaused = false;
 
     // 视频
     private final Object mVideoSync = new Object();
@@ -128,14 +134,12 @@ public class MediaMoviePlayer {
                             final IPlayerListener callback,
                             final boolean audioEnable) {
 
-        if (DEBUG){
-            Log.v(TAG, "Constructor:");
-        }
+        PlayerLog.w("Constructor:");
 
         mContext = context;
         mOutputSurface = outputSurface;
         mCallback = callback;
-        mAudioEnabled = true;
+        mAudioEnabled = audioEnable;
         // 开启播放任务
         new Thread(mMoviePlayerTask, TAG).start();
 
@@ -153,14 +157,14 @@ public class MediaMoviePlayer {
      * 请求准备播放
      */
     public final void prepare() {
-
-        if (DEBUG) {
-            Log.v(TAG, "prepare:");
-        }
+        PlayerLog.w("prepare:");
 
         if (TextUtils.isEmpty(mSourcePath)) {
             return;
         }
+
+
+
         synchronized (mSync) {
 //            mSourcePath = srcPath;
             mPlayerRequest = REQUEST_PREPARE;
@@ -172,13 +176,13 @@ public class MediaMoviePlayer {
      * 请求 开始播放
      */
     public final void play() {
-        if (DEBUG) {
-            Log.v(TAG, "play:");
-        }
+        PlayerLog.w("play:");
+
         synchronized (mSync) {
             if (mPlayerState == STATE_PLAYING) {
                 return;
             }
+
             mPlayerRequest = REQUEST_START;
             mSync.notifyAll();
         }
@@ -189,9 +193,8 @@ public class MediaMoviePlayer {
      * @param newTime 微妙
      */
     public final void seek(final long newTime) {
-        if (DEBUG) {
-            Log.v(TAG, "seek");
-        }
+        PlayerLog.w("seek:");
+
         synchronized (mSync) {
             mPlayerRequest = REQUEST_SEEK;
             mRequestTime = newTime;
@@ -203,9 +206,7 @@ public class MediaMoviePlayer {
      * 请求停止播放
      */
     public final void stop() {
-        if (DEBUG) {
-            Log.v(TAG, "stop:");
-        }
+        PlayerLog.w("stop:");
 
         synchronized (mSync) {
             if (mPlayerState != STATE_STOP) {
@@ -225,9 +226,8 @@ public class MediaMoviePlayer {
      * 请求暂停
      */
     public final void pause() {
-        if (DEBUG) {
-            Log.v(TAG, "pause:");
-        }
+        PlayerLog.w("pause:");
+
         synchronized (mSync) {
             mPlayerRequest = REQUEST_PAUSE;
             mSync.notifyAll();
@@ -238,9 +238,8 @@ public class MediaMoviePlayer {
      * 请求恢复播放
      */
     public final void resume() {
-        if (DEBUG) {
-            Log.v(TAG, "resume:");
-        }
+        PlayerLog.w("resume:");
+
         synchronized (mSync) {
             mPlayerRequest = REQUEST_RESUME;
             mSync.notifyAll();
@@ -251,9 +250,8 @@ public class MediaMoviePlayer {
      * 请求释放所有资源 退出
      */
     public final void release() {
-        if (DEBUG) {
-            Log.v(TAG, "release:");
-        }
+        PlayerLog.w("release:");
+
         stop();
         synchronized (mSync) {
             mPlayerRequest = REQUEST_QUIT;
@@ -290,15 +288,31 @@ public class MediaMoviePlayer {
                         if (localIsRunning) {
                             switch (mPlayerState) {
                                 case STATE_STOP:
+                                    PlayerLog.e("processStop start:  "
+                                            + " mPlayerState = " + wrapState(mPlayerState)
+                                            + " localRequest = " + wrapRequest(localRequest));
+
                                     localIsRunning = processStop(localRequest);
                                     break;
                                 case STATE_PREPARED:
+                                    PlayerLog.e("processPrepared start:  "
+                                            + " mPlayerState = " + wrapState(mPlayerState)
+                                            + " localRequest = " + wrapRequest(localRequest));
+
                                     localIsRunning = processPrepared(localRequest);
                                     break;
                                 case STATE_PLAYING:
+                                    PlayerLog.e("processPlaying start:  "
+                                            + " mPlayerState = " + wrapState(mPlayerState)
+                                            + " localRequest = " + wrapRequest(localRequest));
+
                                     localIsRunning = processPlaying(localRequest);
                                     break;
                                 case STATE_PAUSED:
+                                    PlayerLog.e("processPaused start:  "
+                                            + " mPlayerState = " + wrapState(mPlayerState)
+                                            + " localRequest = " + wrapRequest(localRequest));
+
                                     localIsRunning = processPaused(localRequest);
                                     break;
                             }
@@ -307,14 +321,16 @@ public class MediaMoviePlayer {
                     } catch (final InterruptedException e) {
                         break;
                     } catch (final Exception e) {
-                        Log.e(TAG, "MoviePlayerTask:", e);
+                        PlayerLog.d("Exception e:" + e);
+
                         break;
                     }
                 }
 
             } finally {
-                if (DEBUG) Log.v(TAG, "player task finished:local_isRunning=" + localIsRunning);
-                handleStop();
+                PlayerLog.d("player task finished:local_isRunning = " + localIsRunning);
+
+                handleStopRequest();
             }
         }
     };
@@ -327,11 +343,12 @@ public class MediaMoviePlayer {
      * @throws IOException
      */
     private final boolean processStop(final int localRequest) throws InterruptedException, IOException {
+
         boolean localIsRunning = true;
         switch (localRequest) {
             case REQUEST_PREPARE:
                 // 处理准备请求
-                handlePrepare(mSourcePath);
+                handlePrepareRequest(mSourcePath);
                 break;
             case REQUEST_START:
             case REQUEST_PAUSE:
@@ -342,15 +359,22 @@ public class MediaMoviePlayer {
                 localIsRunning = false;
                 break;
             default:
+                PlayerLog.e("processStop ing: wait" );
 
                 synchronized (mSync) {
                     mSync.wait();
                 }
                 break;
         }
+
         synchronized (mSync) {
             localIsRunning &= mIsRunning;
         }
+
+        PlayerLog.e("processStop end: "
+                + " mPlayerState = " + wrapState(mPlayerState)
+                + " localIsRunning = " + localIsRunning);
+
         return localIsRunning;
     }
 
@@ -361,25 +385,26 @@ public class MediaMoviePlayer {
      * @throws InterruptedException
      */
     private final boolean processPrepared(final int localRequest) throws InterruptedException {
+
         boolean localIsRunning = true;
         switch (localRequest) {
             case REQUEST_START:
                 // 请求开始
-                handleStart();
+                handleStartRequest();
                 break;
             case REQUEST_PAUSE:
             case REQUEST_RESUME:
                 throw new IllegalStateException("processPrepared invalid localRequest:" + localRequest);
             case REQUEST_STOP:
                 // 请求停止
-                handleStop();
+                handleStopRequest();
                 break;
             case REQUEST_QUIT:
                 // 请求退出
                 localIsRunning = false;
                 break;
             default:
-
+                PlayerLog.e("processPrepared ing: wait" );
                 synchronized (mSync) {
                     mSync.wait();
                 }
@@ -389,6 +414,11 @@ public class MediaMoviePlayer {
         synchronized (mSync) {
             localIsRunning &= mIsRunning;
         }
+
+        PlayerLog.e("processPrepared end: "
+                + " mPlayerState = " + wrapState(mPlayerState)
+                + " localIsRunning = " + localIsRunning);
+
         return localIsRunning;
     }
 
@@ -398,6 +428,7 @@ public class MediaMoviePlayer {
      * @return
      */
     private final boolean processPlaying(final int localRequest) {
+
         boolean localIsRunning = true;
         switch (localRequest) {
             case REQUEST_PREPARE:
@@ -410,24 +441,29 @@ public class MediaMoviePlayer {
                 break;
             case REQUEST_STOP:
                 // 处理停止请求
-                handleStop();
+                handleStopRequest();
                 break;
             case REQUEST_PAUSE:
                 // 处理暂停请求
-                handlePause();
+                handlePauseRequest();
                 break;
             case REQUEST_QUIT:
                 // 处理退出请求
                 localIsRunning = false;
                 break;
             default:
-                handleLoop(mCallback);
+                PlayerLog.e("processPlaying ing: wait" );
+                handleLoopRequest();
                 break;
         }
 
         synchronized (mSync) {
             localIsRunning &= mIsRunning;
         }
+        PlayerLog.e("processPrepared end: "
+                + " mPlayerState = " + wrapState(mPlayerState)
+                + " localIsRunning = " + localIsRunning);
+
         return localIsRunning;
     }
 
@@ -449,17 +485,18 @@ public class MediaMoviePlayer {
                 break;
             case REQUEST_STOP:
                 // 处理停止请求
-                handleStop();
+                handleStopRequest();
                 break;
             case REQUEST_RESUME:
                 // 处理恢复播放请求
-                handleResume();
+                handleResumeRequest();
                 break;
             case REQUEST_QUIT:
                 // 处理退出请求
                 localIsRunning = false;
                 break;
             default:
+                PlayerLog.e("processPaused ing: wait" );
                 synchronized (mSync) {
                     mSync.wait();
                 }
@@ -469,21 +506,26 @@ public class MediaMoviePlayer {
         synchronized (mSync) {
             localIsRunning &= mIsRunning;
         }
+
+        PlayerLog.e("processPaused end: "
+                + " mPlayerState = " + wrapState(mPlayerState)
+                + " localIsRunning = " + localIsRunning);
+
         return localIsRunning;
     }
 
     /**
-     * 处理准备状态
+     * 处理准备请求
      * @param sourceFile
      * @throws IOException
      */
-    private final void handlePrepare(final String sourceFile) throws IOException {
-        if (DEBUG) Log.v(TAG, "handlePrepare:" + sourceFile);
+    private final void handlePrepareRequest(final String sourceFile) throws IOException {
+        PlayerLog.d("handlePrepareRequest:" + sourceFile);
 
         synchronized (mSync) {
             // 准备状态的上一个状态必须是停止状态
             if (mPlayerState != STATE_STOP) {
-                throw new RuntimeException(" handlePrepare invalid state:" + mPlayerState);
+                throw new RuntimeException(" handlePrepareRequest invalid state:" + mPlayerState);
             }
         }
         final File src = new File(sourceFile);
@@ -497,8 +539,6 @@ public class MediaMoviePlayer {
 
         mVideoTrackIndex = -1;
         mAudioTrackIndex = -1;
-
-
 
         // 更新视频信息
         updateMovieInfo();
@@ -530,9 +570,9 @@ public class MediaMoviePlayer {
     /**
      * 处理开始请求
      */
-    private final void handleStart() {
+    private final void handleStartRequest() {
         if (DEBUG) {
-            Log.v(TAG, "handleStart:");
+            Log.v(TAG, "handleStartRequest:");
         }
         synchronized (mSync) {
             // 上一个状态必须是 准备状态
@@ -631,30 +671,60 @@ public class MediaMoviePlayer {
     }
 
     /**
-     *
+     * 处理暂停请求
      */
-    private final void handlePause() {
+    private final void handlePauseRequest() {
         if (DEBUG) {
-            Log.v(TAG, "handlePause:");
+            Log.v(TAG, "handlePauseRequest:");
         }
+
+        synchronized (mSync) {
+            // 上一个状态必须是 播放状态
+            if (mPlayerState != STATE_PLAYING)
+                throw new RuntimeException("invalid state:" + mPlayerState);
+
+            mPlayerState = STATE_PAUSED;
+        }
+
+        synchronized (mPauseResumeSync) {
+            mIsPaused = true;
+        }
+
     }
 
     /**
-     *
+     * 处理恢复播放请求
      */
-    private final void handleResume() {
+    private final void handleResumeRequest() {
         if (DEBUG) {
-            Log.v(TAG, "handleResume:");
+            Log.v(TAG, "handleResumeRequest:");
         }
+
+
+        synchronized (mSync) {
+            // 上一个状态必须是 暂停状态
+            if (mPlayerState != STATE_PAUSED)
+                throw new RuntimeException("invalid state:" + mPlayerState);
+
+            mPlayerState = STATE_PLAYING;
+        }
+
+        synchronized (mPauseResumeSync) {
+            mIsPaused = false;
+            mPauseResumeSync.notifyAll();
+        }
+
+
     }
 
     /**
      * 处理停止请求
      */
-    private final void handleStop() {
+    private final void handleStopRequest() {
         if (DEBUG) {
-            Log.v(TAG, "handleStop:");
+            Log.v(TAG, "handleStopRequest:");
         }
+
         synchronized (mVideoTask) {
             if (mVideoTrackIndex >= 0) {
                 mVideoOutputDone = true;
@@ -730,16 +800,16 @@ public class MediaMoviePlayer {
 
 
     /**
-     * @param frameCallback
      */
-    private final void handleLoop(final IPlayerListener frameCallback) {
+    private final void handleLoopRequest() {
 		if (DEBUG) {
-		    Log.d(TAG, "handleLoop");
+		    Log.d(TAG, "handleLoopRequest");
         }
 
         synchronized (mSync) {
             try {
                 mSync.wait();
+
             } catch (final InterruptedException e) {
             }
         }
@@ -747,7 +817,7 @@ public class MediaMoviePlayer {
             if (DEBUG) {
                 Log.d(TAG, "Reached EOS, looping check");
             }
-            handleStop();
+            handleStopRequest();
         }
     }
 
@@ -980,14 +1050,23 @@ public class MediaMoviePlayer {
      * 视频播放任务
      */
     private final Runnable mVideoTask = new Runnable() {
+
         @Override
         public void run() {
             if (DEBUG) {
                 Log.v(TAG, "VideoTask:start");
             }
-            for (; mIsRunning && !mVideoInputDone && !mVideoOutputDone ;) {
+
+            for (; mIsRunning && !mVideoInputDone && !mVideoOutputDone;) {
                 // 循环
                 try {
+
+                    if (mIsPaused) {
+                        synchronized (mPauseResumeSync) {
+                            mPauseResumeSync.wait();
+                        }
+                    }
+
                     // 读一帧数据给 解码器
                     if (!mVideoInputDone) {
                         handleInputVideo();
@@ -996,6 +1075,7 @@ public class MediaMoviePlayer {
                     if (!mVideoOutputDone) {
                         handleOutputVideo(mCallback);
                     }
+
                 } catch (final Exception e) {
                     Log.e(TAG, "VideoTask:", e);
                     break;
@@ -1007,19 +1087,33 @@ public class MediaMoviePlayer {
                 mVideoInputDone = mVideoOutputDone = true;
                 mVideoTask.notifyAll();
             }
+
+            // 播放完成
+            if (mVideoInputDone && mVideoOutputDone && mAudioInputDone && mAudioOutputDone) {
+                handleStopRequest();
+            }
         }
+
     };
 
     /**
      * 音频播放任务
      */
     private final Runnable mAudioTask = new Runnable() {
+
         @Override
         public void run() {
             if (DEBUG) Log.v(TAG, "AudioTask:start");
             for (; mIsRunning && !mAudioInputDone && !mAudioOutputDone ;) {
                 // 循环
                 try {
+
+                    if (mIsPaused) {
+                        synchronized (mPauseResumeSync) {
+                            mPauseResumeSync.wait();
+                        }
+                    }
+
                     if (!mAudioInputDone) {
                         handleInputAudio();
                     }
@@ -1031,10 +1125,16 @@ public class MediaMoviePlayer {
                     break;
                 }
             }
+
             if (DEBUG) Log.v(TAG, "AudioTask:finished");
             synchronized (mAudioTask) {
                 mAudioInputDone = mAudioOutputDone = true;
                 mAudioTask.notifyAll();
+            }
+
+            // 播放完成
+            if (mVideoInputDone && mVideoOutputDone && mAudioInputDone && mAudioOutputDone) {
+                handleStopRequest();
             }
         }
     };
@@ -1424,12 +1524,73 @@ public class MediaMoviePlayer {
     }
 
     /**
+     * 是否停止
+     * @return
+     */
+    public boolean isStop() {
+        return mPlayerState == STATE_STOP;
+    }
+
+    /**
      * 是否在播放
      * @return
      */
     public boolean isPlaying() {
-        return mIsRunning;
+        return mPlayerState == STATE_PLAYING;
     }
+
+    /**
+     * 是否 暂停状态
+     * @return
+     */
+    public boolean isPaused() {
+        return mPlayerState == STATE_PAUSED;
+    }
+
+    /**
+     * @param request
+     * @return
+     */
+    public String wrapRequest(int request) {
+        switch (request) {
+            case REQUEST_PREPARE:
+                return "REQUEST_PREPARE";
+            case REQUEST_START:
+                return "REQUEST_START";
+            case REQUEST_RESUME:
+                return "REQUEST_RESUME";
+            case REQUEST_SEEK:
+                return "REQUEST_SEEK";
+            case REQUEST_STOP:
+                return "REQUEST_STOP";
+            case REQUEST_PAUSE:
+                return "REQUEST_PAUSE";
+            case REQUEST_QUIT:
+                return "REQUEST_QUIT";
+        }
+        return "REQUEST_NON";
+    }
+
+    /**
+     * @param state
+     * @return
+     */
+    public String wrapState(int state) {
+        switch (state) {
+            case STATE_STOP:
+                return "STATE_STOP";
+            case STATE_PREPARED:
+                return "STATE_PREPARED";
+            case STATE_PLAYING:
+                return "STATE_PLAYING";
+            case STATE_PAUSED:
+                return "STATE_PAUSED";
+
+        }
+        return "STATE_STOP";
+    }
+
+
 
 
 

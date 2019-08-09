@@ -6,13 +6,13 @@ package com.yingke.mediacodec.videoplayer.view;
  * <p>Copyright corp.netease.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/8
- * @email tuke@corp.netease.com
- * <p>
- * 最后修改人：无
- * <p>
  */
 public interface IPlayerView {
 
+    /**
+     * 准备
+     */
+    void prepare();
 
     /**
      *  开始
@@ -25,6 +25,11 @@ public interface IPlayerView {
     void pause();
 
     /**
+     * 恢复
+     */
+    void resume();
+
+    /**
      * 总时长
      * @return
      */
@@ -35,6 +40,12 @@ public interface IPlayerView {
      * @return
      */
     int getCurrentPosition();
+
+    /**
+     * 是否播放
+     * @return
+     */
+    boolean isStop();
 
     /**
      * 是否正在播放

@@ -1,11 +1,11 @@
 package com.yingke.mediacodec.videoplayer.view;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.Loader;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.Layout;
 import android.util.AttributeSet;
+import android.util.DebugUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +19,10 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 
+import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.DEBUG;
+import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.TAG;
+import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.TAG_STATIC;
+
 /**
  * 功能：
  * </p>
@@ -28,8 +32,9 @@ import java.io.IOException;
  */
 public class MediaCodecPlayerControl extends FrameLayout {
 
+
     private ImageButton mPlayBtn;
-    private IPlayerView mPlayer;
+    private IPlayerView mPlayerView;
 
     public MediaCodecPlayerControl(@NonNull Context context) {
         super(context);
@@ -52,16 +57,36 @@ public class MediaCodecPlayerControl extends FrameLayout {
         mPlayBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mPlayer == null) {
+                if (mPlayerView == null) {
                     return;
                 }
-                 if (mPlayer.isPlaying()) {
-                     mPlayer.pause();
+                if (mPlayerView.isStop()) {
+                    if (DEBUG) {
+                        Log.e(TAG, "startPlay()" );
+                    }
+                    startPlay();
+                    mPlayBtn.setImageResource(R.mipmap.icon_pause);
+                    return;
+                }
+                if (mPlayerView.isPlaying()) {
+                     if (DEBUG) {
+                         Log.e(TAG, "mPlayerView.pause()" );
+                     }
+
+                     mPlayerView.pause();
                      mPlayBtn.setImageResource(R.mipmap.icon_play);
-                 } else {
-                     startPlay();
+                     return;
+                }
+
+                if (mPlayerView.isPaused()){
+                     if (DEBUG) {
+                         Log.e(TAG, "mPlayerView.start()" );
+                     }
+
+                     mPlayerView.start();
                      mPlayBtn.setImageResource(R.mipmap.icon_pause);
-                 }
+                     return;
+                }
             }
         });
     }
@@ -71,7 +96,7 @@ public class MediaCodecPlayerControl extends FrameLayout {
      * @param player
      */
     public void setMediaPlayer(IPlayerView player){
-        mPlayer = player;
+        mPlayerView = player;
     }
 
     /**
@@ -93,8 +118,8 @@ public class MediaCodecPlayerControl extends FrameLayout {
             final File path = new File(dir, "fc7ch3ggq_shd.mp4");
             prepareSampleMovie(path);
 
-            mPlayer.setVideoPath(path.toString());
-            mPlayer.start();
+            mPlayerView.setVideoPath(path.toString());
+            mPlayerView.prepare();
 
         } catch (IOException e) {
 
