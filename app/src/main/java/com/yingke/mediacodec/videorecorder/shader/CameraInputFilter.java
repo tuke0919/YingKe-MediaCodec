@@ -32,7 +32,8 @@ public class CameraInputFilter extends GPUImageFilter {
 
     public CameraInputFilter(){
         // 顶点着色器 和 片元着色器
-        super(OpenGlUtils.readShaderFromRawResource( R.raw.camera_input_vertex), NO_FILTER_FRAGMENT_SHADER);
+        super(OpenGlUtils.readShaderFromRawResource( R.raw.camera_input_vertex),
+                OpenGlUtils.readShaderFromRawResource( R.raw.camera_input_fragment));
     }
 
     @Override

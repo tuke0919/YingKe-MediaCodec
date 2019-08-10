@@ -14,29 +14,31 @@
     <RelativeLayout
         android:id="@+id/camera_gl_control"
         android:layout_width="match_parent"
-        android:layout_height="130dp"
+        android:layout_height="120dp"
         android:layout_alignParentBottom="true"
-        android:background="#4B000000"
+        android:background="#33000000"
         >
 
         <ImageView
             android:id="@+id/camera_start_record"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@mipmap/icon_record_start_1"
             android:layout_centerInParent="true"
-            android:visibility="visible"
+            android:scaleType="fitXY"
+            android:visibility="gone"
 
             />
 
         <ImageView
             android:id="@+id/camera_stop_record"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@mipmap/icon_record_stop_1"
             android:layout_centerInParent="true"
             android:padding="3dp"
-            android:visibility="gone"
+            android:scaleType="fitXY"
+            android:visibility="visible"
 
             />
 
