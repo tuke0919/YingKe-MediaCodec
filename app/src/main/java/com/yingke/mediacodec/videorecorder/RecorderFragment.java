@@ -70,13 +70,19 @@ public class RecorderFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        mSurfaceView.onResume();
+        if (mSurfaceView != null) {
+            mSurfaceView.onResume();
+        }
+
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mSurfaceView.onPause();
+        if (mSurfaceView != null) {
+            mSurfaceView.onPause();
+        }
+
     }
 
     @Override
