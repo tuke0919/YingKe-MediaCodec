@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.yingke.mediacodec.videorecorder.glsurface.CameraGlSurfaceView
+        android:id="@+id/camera_gl_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
+
+    <RelativeLayout
+        android:id="@+id/camera_gl_control"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:layout_alignParentBottom="true"
+        android:background="#4B000000"
+        >
+
+        <ImageView
+            android:id="@+id/camera_start_record"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@mipmap/icon_record_start_1"
+            android:layout_centerInParent="true"
+            android:visibility="visible"
+
+            />
+
+        <ImageView
+            android:id="@+id/camera_stop_record"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@mipmap/icon_record_stop_1"
+            android:layout_centerInParent="true"
+            android:padding="3dp"
+            android:visibility="gone"
+
+            />
+
+
+
+    </RelativeLayout>
+
+</RelativeLayout>

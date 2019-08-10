@@ -25,7 +25,7 @@ import static com.yingke.mediacodec.videoplayer.media.MediaMoviePlayer.TAG;
 
 
 /**
- * 功能：
+ * 功能：播放器
  * </p>
  * <p>Copyright corp.netease.com 2018 All right reserved </p>
  *

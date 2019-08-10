@@ -5,6 +5,9 @@ import android.os.Bundle;
 
 import com.yingke.mediacodec.R;
 
+/**
+ * 基于 MediaCodec 的播放器
+ */
 public class MediaCodecPlayerActivity extends AppCompatActivity {
 
     @Override
