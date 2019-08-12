@@ -3,6 +3,11 @@ package com.yingke.mediacodec.videorecorder.glsurface;
 import android.content.Context;
 import android.util.AttributeSet;
 
+import com.yingke.mediacodec.videorecorder.encoder.MediaEncoder;
+import com.yingke.mediacodec.videorecorder.encoder.MediaVideoEncoder;
+
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * 功能：
  * </p>
@@ -16,6 +21,9 @@ import android.util.AttributeSet;
  */
 public class MediaCodecRecordGlSurfaceView extends CameraGlSurfaceView {
 
+    // 视频编码器
+    private MediaVideoEncoder mVideoEncoder;
+    private boolean flip = true;
 
     public MediaCodecRecordGlSurfaceView(Context context) {
         super(context);
@@ -26,4 +34,44 @@ public class MediaCodecRecordGlSurfaceView extends CameraGlSurfaceView {
     }
 
 
+
+
+    @Override
+    public void onDrawFrame(GL10 gl) {
+        super.onDrawFrame(gl);
+
+        // ---------------视频写入----------------
+        // 减少一半的视频数据写入
+        flip = !flip;
+        if (flip) {
+            // ~30fps
+            synchronized (this) {
+                if (mVideoEncoder != null) {
+                    // 通知捕获线程 相机帧可用
+                    mVideoEncoder.frameAvailableSoon(mTextureId, gLCubeBuffer, gLTextureBuffer);
+                }
+            }
+        }
+    }
+
+    /**
+     * 设置视频编码器
+     * 开始录制视频时，由主线程||异步线程回调回来的
+     *
+     * @param videoEncoder
+     */
+    public void setVideoEncoder(final MediaVideoEncoder videoEncoder) {
+
+        queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (MediaCodecRecordGlSurfaceView.this) {
+                    if (videoEncoder != null) {
+                        videoEncoder.setEglContext(surfaceWidth, surfaceHeight);
+                    }
+                    MediaCodecRecordGlSurfaceView.this.mVideoEncoder = videoEncoder;
+                }
+            }
+        });
+    }
 }

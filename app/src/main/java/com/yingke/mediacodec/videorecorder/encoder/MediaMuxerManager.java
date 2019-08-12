@@ -72,6 +72,19 @@ public class MediaMuxerManager {
 
     }
 
+    /**
+     * 准备，主要是初始化编码器
+     *
+     * @throws IOException
+     */
+    public void prepare() throws IOException {
+        if (mVideoEncoder != null) {
+            mVideoEncoder.prepare();
+        }
+        if (mAudioEncoder != null) {
+            mAudioEncoder.prepare();
+        }
+    }
 
     /**
      * 开始录制
@@ -84,7 +97,6 @@ public class MediaMuxerManager {
         if (mAudioEncoder != null) {
             mAudioEncoder.startRecording();
         }
-
     }
 
     /**
@@ -100,9 +112,7 @@ public class MediaMuxerManager {
             mAudioEncoder.stopRecording();
             mAudioEncoder = null;
         }
-
     }
-
 
     /**
      * 添加视频编码器和 音频编码器
@@ -194,19 +204,12 @@ public class MediaMuxerManager {
         }
     }
 
-
-
-
-
-
     /**
      * @return
      */
     public synchronized boolean isStarted() {
         return mIsStarted;
     }
-
-
 
     /**
      * 获取输出文件路径
@@ -231,7 +234,5 @@ public class MediaMuxerManager {
         final GregorianCalendar now = new GregorianCalendar();
         return mDateTimeFormat.format(now.getTime());
     }
-
-
 
 }

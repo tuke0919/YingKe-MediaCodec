@@ -184,9 +184,17 @@ public class CameraProxy implements ICamera, Camera.AutoFocusCallback {
             }
             // 设置聚焦模式
             List<String> supportedFocusModes = mParameters.getSupportedFocusModes();
+
+            // 连续聚焦
+            if (supportedFocusModes != null && supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                mParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            }
+
+            // 自动聚焦
             if (supportedFocusModes != null && supportedFocusModes.contains(Parameters.FOCUS_MODE_AUTO)) {
                 mParameters.setFocusMode(Parameters.FOCUS_MODE_AUTO);
             }
+
             // 设置预览图片格式
             mParameters.setPreviewFormat(ImageFormat.NV21);
             // 设置拍照图片格式

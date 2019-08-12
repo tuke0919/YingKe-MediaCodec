@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 public abstract class MediaEncoder implements Runnable{
 
     private static final String TAG = MediaEncoder.class.getSimpleName();
+    private String TAG_1 ;
 
     // 10[msec]
     protected static final int TIMEOUT_USEC = 10000;
@@ -62,23 +63,26 @@ public abstract class MediaEncoder implements Runnable{
      * @param mediaMuxerManager
      * @param mediaEncoderListener
      */
-    public MediaEncoder(final MediaMuxerManager mediaMuxerManager, final MediaEncoderListener mediaEncoderListener) {
-        PlayerLog.d(TAG, "---MediaEncoder construtor ---");
+    public MediaEncoder(String tag,
+                        final MediaMuxerManager mediaMuxerManager,
+                        final MediaEncoderListener mediaEncoderListener) {
+        TAG_1 = tag;
+        PlayerLog.d(TAG, TAG_1 + "---MediaEncoder construtor ---");
 
         if (mediaEncoderListener == null) {
-            throw new NullPointerException("MediaEncoderListener is null");
+            throw new NullPointerException(TAG_1 +"MediaEncoderListener is null");
         }
         if (mediaMuxerManager == null) {
-            throw new NullPointerException("MediaMuxerManager is null");
+            throw new NullPointerException(TAG_1 +"MediaMuxerManager is null");
         }
         this.mMuxerManager = mediaMuxerManager;
         this.mMediaEncoderListener = mediaEncoderListener;
         // 添加解码器
         this.mMuxerManager.addEncoder(MediaEncoder.this);
 
-        PlayerLog.d(TAG ,"---MediaEncoder synchronized (mSync) before begin---");
+        PlayerLog.d(TAG ,TAG_1 +"---MediaEncoder synchronized (mSync) before begin---");
         synchronized (mSync) {
-            PlayerLog.d(TAG, "---MediaEncoder synchronized (mSync) begin---");
+            PlayerLog.d(TAG, TAG_1 +"---MediaEncoder synchronized (mSync) begin---");
 
             // 创建bufferInfo
             mBufferInfo = new MediaCodec.BufferInfo();
@@ -92,7 +96,7 @@ public abstract class MediaEncoder implements Runnable{
                 e.printStackTrace();
             }
         }
-        PlayerLog.d(TAG, "---MediaEncoder synchronized (mSync) end---");
+        PlayerLog.d(TAG, TAG_1 +"---MediaEncoder synchronized (mSync) end---");
     }
 
 
@@ -102,9 +106,9 @@ public abstract class MediaEncoder implements Runnable{
     @MainThread
     public void startRecording() {
 
-        PlayerLog.d(TAG,"---startRecording synchronized (mSync) before begin---");
+        PlayerLog.d(TAG,TAG_1 +"---startRecording synchronized (mSync) before begin---");
         synchronized (mSync) {
-            PlayerLog.d(TAG,"---startRecording synchronized (mSync) begin---");
+            PlayerLog.d(TAG,TAG_1 +"---startRecording synchronized (mSync) begin---");
             // 正在录制标识
             mIsCapturing = true;
             // 停止标识 置false
@@ -112,7 +116,7 @@ public abstract class MediaEncoder implements Runnable{
             //
             mSync.notifyAll();
         }
-        PlayerLog.d(TAG,"---startRecording synchronized (mSync) end---");
+        PlayerLog.d(TAG,TAG_1 +"---startRecording synchronized (mSync) end---");
 
     }
 
@@ -122,16 +126,16 @@ public abstract class MediaEncoder implements Runnable{
      */
     @MainThread
     public void stopRecording() {
-        PlayerLog.d(TAG,"---stopRecording synchronized (mSync) before begin---");
+        PlayerLog.d(TAG,TAG_1 + "---stopRecording synchronized (mSync) before begin---");
         synchronized (mSync) {
-            PlayerLog.d(TAG,"---stopRecording synchronized (mSync) begin---");
+            PlayerLog.d(TAG,TAG_1 + "---stopRecording synchronized (mSync) begin---");
             if (!mIsCapturing || mRequestStop) {
                 return;
             }
             mRequestStop = true;
             mSync.notifyAll();
         }
-        PlayerLog.d(TAG,"---stopRecording synchronized (mSync) end---");
+        PlayerLog.d(TAG,TAG_1 + "---stopRecording synchronized (mSync) end---");
     }
 
     /**
@@ -149,35 +153,35 @@ public abstract class MediaEncoder implements Runnable{
      * @return true 如果编码器可以编码
      */
     public boolean frameAvailableSoon() {
-        PlayerLog.d(TAG, "---frameAvailableSoon---");
+        PlayerLog.d(TAG, TAG_1 + "---frameAvailableSoon---");
 
-        PlayerLog.d(TAG, "---mSync before begin---");
+        PlayerLog.d(TAG, TAG_1 + "---mSync before begin---");
         synchronized (mSync) {
-            PlayerLog.d(TAG, "---mSync begin---");
+            PlayerLog.d(TAG, TAG_1 + "---mSync begin---");
 
             if (!mIsCapturing || mRequestStop) {
-                PlayerLog.d(TAG, "mIsCapturing: " + mIsCapturing);
-                PlayerLog.d(TAG, "mRequestStop: " + mRequestStop);
-                PlayerLog.d(TAG, "return false");
+                PlayerLog.d(TAG, TAG_1 + "mIsCapturing: " + mIsCapturing);
+                PlayerLog.d(TAG, TAG_1 + "mRequestStop: " + mRequestStop);
+                PlayerLog.d(TAG, TAG_1 + "return false");
                 return false;
             }
             mRequestDrainEncoderCount++;
-            PlayerLog.d(TAG, "mRequestDrainEncoderCount: "+mRequestDrainEncoderCount);
+            PlayerLog.d(TAG, TAG_1 + "mRequestDrainEncoderCount: "+mRequestDrainEncoderCount);
             mSync.notifyAll();
         }
-        PlayerLog.d(TAG, "---mSync end---");
-        PlayerLog.d(TAG, "return true");
+        PlayerLog.d(TAG, TAG_1 + "---mSync end---");
+        PlayerLog.d(TAG, TAG_1 + "return true");
         return true;
     }
 
     @Override
     public void run() {
-        PlayerLog.d(TAG,"---run---");
+        PlayerLog.d(TAG,TAG_1 + "---run---");
 
-        PlayerLog.d(TAG,"---run synchronized (mSync) before begin---");
+        PlayerLog.d(TAG,TAG_1 + "---run synchronized (mSync) before begin---");
         // 线程开启
         synchronized (mSync) {
-            PlayerLog.d(TAG,"---run synchronized (mSync) begin---");
+            PlayerLog.d(TAG,TAG_1 + "---run synchronized (mSync) begin---");
 
             mRequestStop = false;
             mRequestDrainEncoderCount = 0;
@@ -185,7 +189,7 @@ public abstract class MediaEncoder implements Runnable{
             // 唤醒等待的线程
             mSync.notify();
         }
-        PlayerLog.d(TAG,"---run synchronized (mSync) end---");
+        PlayerLog.d(TAG,TAG_1 + "---run synchronized (mSync) end---");
 
         // 线程开启
         final boolean isRunning = true;
@@ -198,9 +202,9 @@ public abstract class MediaEncoder implements Runnable{
         while (isRunning) {
 
             // 检查循环条件 是否成立
-            PlayerLog.d(TAG,"---run2 synchronized (mSync) before begin---");
+            PlayerLog.d(TAG,TAG_1 + "---run2 synchronized (mSync) before begin---");
             synchronized (mSync) {
-                PlayerLog.d(TAG,"---run2 synchronized (mSync) begin---");
+                PlayerLog.d(TAG,TAG_1 + "---run2 synchronized (mSync) begin---");
 
                 localRequestStop = mRequestStop;
                 localRequestDrainEncoderFlag = (mRequestDrainEncoderCount > 0);
@@ -208,7 +212,7 @@ public abstract class MediaEncoder implements Runnable{
                     mRequestDrainEncoderCount--;
                 }
             }
-            PlayerLog.d(TAG,"---run2 synchronized (mSync) end---");
+            PlayerLog.d(TAG,TAG_1 + "---run2 synchronized (mSync) end---");
 
             // 停止录制时，调用
             if (localRequestStop) {
@@ -232,9 +236,9 @@ public abstract class MediaEncoder implements Runnable{
             } else {
 
                 // ------不需要录制时，线程进入等待状态---------
-                PlayerLog.d(TAG,"---run3 synchronized (mSync) before begin---");
+                PlayerLog.d(TAG,TAG_1 + "---run3 synchronized (mSync) before begin---");
                 synchronized (mSync) {
-                    PlayerLog.d(TAG,"---run3 synchronized (mSync) begin---");
+                    PlayerLog.d(TAG,TAG_1 + "---run3 synchronized (mSync) begin---");
                     try {
                         mSync.wait();
                     } catch (final InterruptedException e) {
@@ -242,7 +246,7 @@ public abstract class MediaEncoder implements Runnable{
                         break;
                     }
                 }
-                PlayerLog.d(TAG,"---run3 synchronized (mSync) end---");
+                PlayerLog.d(TAG,TAG_1 + "---run3 synchronized (mSync) end---");
             }
         }
 
@@ -270,7 +274,7 @@ public abstract class MediaEncoder implements Runnable{
             // 拿到输出缓冲区的索引
             int encoderStatus = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                PlayerLog.d(TAG,"---drainEncoder encoderStatus == INFO_TRY_AGAIN_LATER---");
+                PlayerLog.d(TAG,TAG_1 + "---drainEncoder encoderStatus == INFO_TRY_AGAIN_LATER---");
 
                 // 还没有可用的输出
                 if (!mIsEndOfStream) {
@@ -281,14 +285,14 @@ public abstract class MediaEncoder implements Runnable{
                     }
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                PlayerLog.d(TAG,"---drainEncoder encoderStatus == INFO_OUTPUT_BUFFERS_CHANGED---");
+                PlayerLog.d(TAG,TAG_1 + "---drainEncoder encoderStatus == INFO_OUTPUT_BUFFERS_CHANGED---");
 
                 // this shoud not come when encoding
                 // 拿到输出缓冲区,用于取到编码后的数据
                 encoderOutputBuffers = mMediaCodec.getOutputBuffers();
 
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                PlayerLog.d(TAG,"---drainEncoder encoderStatus == INFO_OUTPUT_FORMAT_CHANGED---");
+                PlayerLog.d(TAG,TAG_1 + "---drainEncoder encoderStatus == INFO_OUTPUT_FORMAT_CHANGED---");
                 // 输出帧格式改变，应该在接受buffer之前返回，只会发生一次
 
                 if (mMuxerStarted) {
@@ -329,7 +333,7 @@ public abstract class MediaEncoder implements Runnable{
                 if (mBufferInfo.size != 0) {
                     count = 0;
                     if (!mMuxerStarted) {
-                        throw new RuntimeException("drain:muxer hasn't started");
+                        throw new RuntimeException(TAG_1 + "drain:muxer hasn't started");
                     }
                     // 写编码数据到muxer，显示时间需要调整
                     mBufferInfo.presentationTimeUs = getPTSUs();

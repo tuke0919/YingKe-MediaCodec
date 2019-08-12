@@ -50,7 +50,7 @@ public class MediaAudioEncoder extends MediaEncoder {
     };
 
     public MediaAudioEncoder(MediaMuxerManager mediaMuxerManager, MediaEncoderListener mediaEncoderListener) {
-        super(mediaMuxerManager, mediaEncoderListener);
+        super(TAG, mediaMuxerManager, mediaEncoderListener);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class MediaAudioEncoder extends MediaEncoder {
             try {
                 mMediaEncoderListener.onPrepared(this);
             } catch (final Exception e) {
-                PlayerLog.e(TAG, "prepare:" +  e);
+                PlayerLog.e(TAG, TAG + "prepare:" +  e);
             }
         }
     }

@@ -118,7 +118,7 @@ public class RecordSurfaceRender implements Runnable {
      *
      * @param texId
      */
-    public final void draw(final int texId,  FloatBuffer gLCubeBuffer, FloatBuffer gLTextureBuffer) {
+    public final void drawFrame(final int texId, FloatBuffer gLCubeBuffer, FloatBuffer gLTextureBuffer) {
         synchronized (mSync) {
             // 释放资源
             if (mRequestRelease) {

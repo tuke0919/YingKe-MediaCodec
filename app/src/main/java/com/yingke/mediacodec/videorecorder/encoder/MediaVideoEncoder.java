@@ -50,7 +50,7 @@ public class MediaVideoEncoder extends MediaEncoder {
                              int videoWidth,
                              int videoHeight) {
 
-        super(mediaMuxerManager, mediaEncoderListener);
+        super(TAG,mediaMuxerManager, mediaEncoderListener);
 
         PlayerLog.i(TAG, "MediaVideoEncoder constructor： ");
         mVideoWidth = videoWidth;
@@ -72,13 +72,16 @@ public class MediaVideoEncoder extends MediaEncoder {
 
         boolean result;
         if (result = super.frameAvailableSoon()) {
-            mSurfaceRender.draw(textureId, gLCubeBuffer, gLTextureBuffer);
+            mSurfaceRender.drawFrame(textureId, gLCubeBuffer, gLTextureBuffer);
         }
         return result;
     }
 
 
-
+    /**
+     * 初始化编码器
+     * @throws IOException
+     */
     @Override
     public void prepare() throws IOException {
         PlayerLog.d(TAG, "---prepare---");
@@ -120,7 +123,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     }
 
     /**
-     * 运行在GLThread中
+     * 设置Egl环境
      *
      * @param surfaceWidth
      * @param surfaceHeight
