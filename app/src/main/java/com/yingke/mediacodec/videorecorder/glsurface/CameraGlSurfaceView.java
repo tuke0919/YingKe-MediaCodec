@@ -204,7 +204,10 @@ public class CameraGlSurfaceView extends GLSurfaceView implements GLSurfaceView.
         // 释放相机资源
         if (mCameraManger != null) {
             mCameraManger.releaseCamera();
+            mCameraManger = null;
         }
+
+        mSurfaceTexture = null;
     }
 
     @Override
@@ -212,6 +215,23 @@ public class CameraGlSurfaceView extends GLSurfaceView implements GLSurfaceView.
         // 当图像帧 可用时 SurfaceTexture把这帧图像写入 mTextureId，此处调用onDrawFrame(GL10 gl)绘图
         requestRender();
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mSurfaceTexture != null && mCameraManger !=  null) {
+            mCameraManger.startPreview(mSurfaceTexture);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mCameraManger != null) {
+            mCameraManger.stopPreview();
+        }
+    }
+
 
 
     /**
