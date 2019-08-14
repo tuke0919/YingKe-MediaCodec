@@ -3,6 +3,7 @@ package com.yingke.mediacodec.videorecorder.encoder;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.opengl.EGLContext;
 import android.util.Log;
 import android.view.Surface;
 
@@ -10,6 +11,7 @@ import com.yingke.mediacodec.videoplayer.PlayerLog;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
+
 
 /**
  * 功能：
@@ -29,6 +31,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     private static final String MIME_TYPE = "video/avc";
     // FPS 帧率
     private static final int FRAME_RATE = 25;
+    private static final float BPP = 0.25f;
 
     private final int mVideoWidth;
     private final int mVideoHeight;
@@ -67,12 +70,15 @@ public class MediaVideoEncoder extends MediaEncoder {
      * @param gLTextureBuffer
      * @return
      */
-    public boolean frameAvailableSoon(int textureId, FloatBuffer gLCubeBuffer, FloatBuffer gLTextureBuffer) {
+    public boolean frameAvailableSoon(int textureId,
+                                      FloatBuffer gLCubeBuffer,
+                                      FloatBuffer gLTextureBuffer,
+                                      float[] textureMatrix) {
         PlayerLog.d(TAG, "---MediaVideoEncoder ：frameAvailableSoon---");
 
         boolean result;
         if (result = super.frameAvailableSoon()) {
-            mSurfaceRender.drawFrame(textureId, gLCubeBuffer, gLTextureBuffer);
+            mSurfaceRender.drawFrame(textureId, gLCubeBuffer, gLTextureBuffer, textureMatrix);
         }
         return result;
     }
@@ -127,9 +133,10 @@ public class MediaVideoEncoder extends MediaEncoder {
      *
      * @param surfaceWidth
      * @param surfaceHeight
+     * @param shareEglContext
      */
-    public void setEglContext(int surfaceWidth, int surfaceHeight) {
-        mSurfaceRender.setEglContext(surfaceWidth, surfaceHeight, mMediaCodecIntputSurface);
+    public void setEglContext(int surfaceWidth, int surfaceHeight, EGLContext shareEglContext) {
+        mSurfaceRender.setEglContext(surfaceWidth, surfaceHeight, mMediaCodecIntputSurface, shareEglContext);
     }
 
 
@@ -162,8 +169,9 @@ public class MediaVideoEncoder extends MediaEncoder {
      * @return
      */
     private int calcBitRate() {
-        //final int bitrate = (int) (BPP * FRAME_RATE * mVideoWidth * mVideoHeight);
-        final int bitrate = 800000;
+        final int bitrate = (int) (BPP * FRAME_RATE * mVideoWidth * mVideoHeight);
+//        final int bitrate = 800000;
+        Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
         return bitrate;
     }
 }

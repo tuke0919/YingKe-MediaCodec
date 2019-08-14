@@ -320,6 +320,8 @@ public abstract class MediaEncoder implements Runnable{
                 // unexpected status
 
             } else {
+                PlayerLog.d(TAG,TAG_1 + "---drainEncoder encoderStatus == 编码器输出位置" + encoderStatus);
+
                 // 获取解码后的数据
                 final ByteBuffer encodedData = encoderOutputBuffers[encoderStatus];
                 if (encodedData == null) {

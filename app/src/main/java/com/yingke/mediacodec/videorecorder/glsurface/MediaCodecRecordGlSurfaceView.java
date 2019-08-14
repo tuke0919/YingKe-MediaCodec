@@ -1,11 +1,14 @@
 package com.yingke.mediacodec.videorecorder.glsurface;
 
 import android.content.Context;
+import android.opengl.EGL14;
 import android.util.AttributeSet;
 
 import com.yingke.mediacodec.videorecorder.encoder.MediaEncoder;
 import com.yingke.mediacodec.videorecorder.encoder.MediaVideoEncoder;
 
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -48,7 +51,7 @@ public class MediaCodecRecordGlSurfaceView extends CameraGlSurfaceView {
             synchronized (this) {
                 if (mVideoEncoder != null) {
                     // 通知捕获线程 相机帧可用
-                    mVideoEncoder.frameAvailableSoon(mTextureId, gLCubeBuffer, gLTextureBuffer);
+                    mVideoEncoder.frameAvailableSoon(mTextureId, gLCubeBuffer, gLTextureBuffer, mTextureMatrix);
                 }
             }
         }
@@ -67,7 +70,7 @@ public class MediaCodecRecordGlSurfaceView extends CameraGlSurfaceView {
             public void run() {
                 synchronized (MediaCodecRecordGlSurfaceView.this) {
                     if (videoEncoder != null) {
-                        videoEncoder.setEglContext(surfaceWidth, surfaceHeight);
+                        videoEncoder.setEglContext(surfaceWidth, surfaceHeight, EGL14.eglGetCurrentContext());
                     }
                     MediaCodecRecordGlSurfaceView.this.mVideoEncoder = videoEncoder;
                 }

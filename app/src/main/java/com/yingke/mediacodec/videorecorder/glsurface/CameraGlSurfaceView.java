@@ -1,8 +1,6 @@
 package com.yingke.mediacodec.videorecorder.glsurface;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES20;
@@ -24,7 +22,6 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -49,6 +46,9 @@ public class CameraGlSurfaceView extends GLSurfaceView implements GLSurfaceView.
     // 图像宽高
     protected int imageWidth;
     protected int imageHeight;
+
+    // 纹理坐标变化矩阵
+    protected float[] mTextureMatrix;
 
     protected ScaleType mScaleType = ScaleType.FIT_XY;
 
@@ -187,10 +187,10 @@ public class CameraGlSurfaceView extends GLSurfaceView implements GLSurfaceView.
         mSurfaceTexture.updateTexImage();
 
         // 获取并设置纹理变换矩阵
-        float[] textureMatrix = new float[16];
-        mSurfaceTexture.getTransformMatrix(textureMatrix);
-        mCameraInputFilter.setTextureTransformMatrix(textureMatrix);
+        mTextureMatrix = new float[16];
+        mSurfaceTexture.getTransformMatrix(mTextureMatrix);
 
+        mCameraInputFilter.setTextureTransformMatrix(mTextureMatrix);
 
         // 没有使用FBO，直接绘制到窗口默认帧缓冲上，然后到windowSurface
         mCameraInputFilter.onDrawFrame(mTextureId, gLCubeBuffer, gLTextureBuffer);

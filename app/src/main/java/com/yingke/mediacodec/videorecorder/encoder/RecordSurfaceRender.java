@@ -1,17 +1,17 @@
 package com.yingke.mediacodec.videorecorder.encoder;
 
-import android.graphics.SurfaceTexture;
+import android.opengl.EGLContext;
 import android.opengl.GLES20;
 import android.text.TextUtils;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 
-import com.yingke.mediacodec.videorecorder.glsurface.RecordEGLHelper;
+import com.yingke.mediacodec.videoplayer.PlayerLog;
+import com.yingke.mediacodec.videorecorder.glsurface.RecorderEglHelper;
 import com.yingke.mediacodec.videorecorder.shader.CameraInputFilter;
 import com.yingke.mediacodec.videorecorder.shader.OpenGlUtils;
 
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
+
 
 /**
  * 功能：绘制Surface线程，将camera图像帧绘制到 视频编码器的输入Surface上，就是在向编码器写数据
@@ -34,13 +34,18 @@ public class RecordSurfaceRender implements Runnable {
     private int mSurfaceHeight;
 
     // 编码器输入Surface，渲染到这里
-    private Object mMediaCodecInputSurface;
+    private Surface mMediaCodecInputSurface;
+    // 共享的Egl上下文
+    private EGLContext mShareEglContext;
+
     // 纹理id，是相机的SurfaceTexture的内存
     private int mTextureId = OpenGlUtils.NO_TEXTURE;
     // 顶点坐标
     private FloatBuffer mGLCubeBuffer;
     // 纹理坐标
     private FloatBuffer mGLTextureBuffer;
+    // 纹理变换矩阵
+    private float[] mTextureMatrix;
 
 
     // 是否请求设置Egl环境
@@ -52,7 +57,8 @@ public class RecordSurfaceRender implements Runnable {
     // 需要绘制的次数
     private int mRequestDraw;
 
-    private RecordEGLHelper mEGLHelper;
+//    private RecordEGLHelper mEGLHelper;
+    private RecorderEglHelper mEGLHelper;
     private CameraInputFilter mInputFilter;
 
 
@@ -83,14 +89,13 @@ public class RecordSurfaceRender implements Runnable {
      * @param surfaceWidth
      * @param surfaceHeight
      * @param surface
+     * @param shareEglContext
      */
     public final void setEglContext(int surfaceWidth,
                                     int surfaceHeight,
-                                    final Object surface) {
+                                    final Surface surface,
+                                    EGLContext shareEglContext) {
 
-        if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture) && !(surface instanceof SurfaceHolder)) {
-            throw new RuntimeException("unsupported window type:" + surface);
-        }
 
         synchronized (mSync) {
             // 释放资源
@@ -100,7 +105,7 @@ public class RecordSurfaceRender implements Runnable {
             mSurfaceWidth = surfaceWidth;
             mSurfaceHeight = surfaceHeight;
             mMediaCodecInputSurface = surface;
-
+            mShareEglContext = shareEglContext;
 
             mRequestSetEglContext = true;
             mSync.notifyAll();
@@ -118,17 +123,23 @@ public class RecordSurfaceRender implements Runnable {
      *
      * @param texId
      */
-    public final void drawFrame(final int texId, FloatBuffer gLCubeBuffer, FloatBuffer gLTextureBuffer) {
+    public final void drawFrame(final int texId, FloatBuffer gLCubeBuffer, FloatBuffer gLTextureBuffer, float[] textureMatrix) {
+        PlayerLog.d(TAG, "--drawFrame-- texId = " + texId);
+
         synchronized (mSync) {
             // 释放资源
             if (mRequestRelease) {
                 return;
             }
+
             mTextureId = texId;
             mGLCubeBuffer = gLCubeBuffer;
             mGLTextureBuffer = gLTextureBuffer;
+            mTextureMatrix = textureMatrix;
 
             mRequestDraw++;
+
+            PlayerLog.d(TAG, "--drawFrame-- mRequestDraw = " + mRequestDraw);
             mSync.notifyAll();
         }
     }
@@ -183,6 +194,7 @@ public class RecordSurfaceRender implements Runnable {
                     mRequestDraw--;
                 }
             }
+            PlayerLog.d(TAG, "--run render -- localRequestDraw = " + localRequestDraw);
             if (localRequestDraw) {
                 // 需要绘制
                 if ((mEGLHelper != null) && mTextureId >= 0) {
@@ -190,10 +202,15 @@ public class RecordSurfaceRender implements Runnable {
                     GLES20.glClearColor(0, 0, 0, 0);
                     GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
+                    PlayerLog.d(TAG, "--run render -- onDrawFrame: mTextureId = " + mTextureId);
+                    mInputFilter.setTextureTransformMatrix(mTextureMatrix);
                     // 在EGL环境中绘制帧
                     mInputFilter.onDrawFrame(mTextureId, mGLCubeBuffer, mGLTextureBuffer);
                     // 交换buffer
-                    mEGLHelper.swapMyEGLBuffers();
+                    // Calls to eglSwapBuffers() cause a frame of data to be sent to the video encoder.
+
+                    PlayerLog.d(TAG, "--run render -- swapBuffers");
+                    mEGLHelper.swapBuffers();
                 }
             } else {
 
@@ -221,8 +238,10 @@ public class RecordSurfaceRender implements Runnable {
      */
     private final void internalPrepare() {
         releaseEGL();
-        mEGLHelper = new RecordEGLHelper(mSurfaceWidth, mSurfaceHeight, mMediaCodecInputSurface);
+        mEGLHelper = new RecorderEglHelper(mShareEglContext, mMediaCodecInputSurface);
+        mEGLHelper.makeCurrent();
         mInputFilter = new CameraInputFilter();
+        mInputFilter.init();
         mMediaCodecInputSurface = null;
         mSync.notifyAll();
     }
@@ -232,7 +251,7 @@ public class RecordSurfaceRender implements Runnable {
      */
     private final void releaseEGL() {
         if (mEGLHelper != null) {
-            mEGLHelper.destroyEglContext();
+            mEGLHelper.release();
             mEGLHelper = null;
         }
     }
