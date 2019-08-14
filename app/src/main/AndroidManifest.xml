@@ -25,13 +25,13 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".videorecorder.MediaCodecRecorderActivity"
+            android:name=".recorder.MediaCodecRecorderActivity"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"/>
 
         <activity android:name=".simple.MediaMuxerActivity" />
 
         <activity
-            android:name=".videoplayer.MediaCodecPlayerActivity"
+            android:name=".player.MediaCodecPlayerActivity"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
         <activity android:name=".MainActivity">
             <intent-filter>

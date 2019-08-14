@@ -2,7 +2,7 @@ package com.yingke.mediacodec;
 
 import android.app.Application;
 
-import com.yingke.mediacodec.videorecorder.shader.OpenGlCameraSdk;
+import com.yingke.mediacodec.recorder.shader.OpenGlCameraSdk;
 
 
 /**

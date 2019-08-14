@@ -23,7 +23,7 @@
         <!--android:background="@null"-->
         <!--/>-->
 
-    <com.yingke.mediacodec.videoplayer.view.MediaCodecPlayerView
+    <com.yingke.mediacodec.player.view.MediaCodecPlayerView
         android:id="@+id/player_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

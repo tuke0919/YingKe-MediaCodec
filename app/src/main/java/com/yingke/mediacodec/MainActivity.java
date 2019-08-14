@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.yingke.mediacodec.simple.MediaMuxerActivity;
-import com.yingke.mediacodec.videoplayer.MediaCodecPlayerActivity;
-import com.yingke.mediacodec.videorecorder.MediaCodecRecorderActivity;
+import com.yingke.mediacodec.player.MediaCodecPlayerActivity;
+import com.yingke.mediacodec.recorder.MediaCodecRecorderActivity;
 
 import java.util.ArrayList;
 
