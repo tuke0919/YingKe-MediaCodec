@@ -33,6 +33,10 @@
         <activity
             android:name=".player.MediaCodecPlayerActivity"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+
+        <activity android:name=".transcode.ui.MediaCodecTransCodeActivity" />
+
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

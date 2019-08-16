@@ -1,5 +1,7 @@
 package com.yingke.mediacodec.transcode;
 
+import com.yingke.mediacodec.transcode.listener.ProgressListener;
+
 /**
  * 功能：
  * </p>
@@ -13,6 +15,7 @@ package com.yingke.mediacodec.transcode;
  */
 public class MediaCodecTransCodeManager {
 
+    private static  TransCodeTask task;
 
     /**
      * @param srcPath     原地址
@@ -24,9 +27,15 @@ public class MediaCodecTransCodeManager {
      * @return
      */
     public static TransCodeTask convertVideo(String srcPath, String destPath, int outputWidth, int outputHeight, int bitrate, ProgressListener listener) {
-        TransCodeTask task = new TransCodeTask(listener);
+        task = new TransCodeTask(listener);
         task.execute(srcPath, destPath, outputWidth, outputHeight, bitrate);
         return task;
+    }
+
+    public static void cancelTransCodeTask() {
+        if(task != null) {
+            task.cancel(true);
+        }
     }
 
 

@@ -2,6 +2,9 @@ package com.yingke.mediacodec.transcode;
 
 import android.os.AsyncTask;
 
+import com.yingke.mediacodec.transcode.listener.ProgressListener;
+import com.yingke.mediacodec.transcode.listener.SlimProgressListener;
+
 
 /**
  * A asyncTask to convert video
@@ -57,4 +60,5 @@ public class TransCodeTask extends AsyncTask<Object, Float, Boolean> {
             }
         }
     }
+
 }

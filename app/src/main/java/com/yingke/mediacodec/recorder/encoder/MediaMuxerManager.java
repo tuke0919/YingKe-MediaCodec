@@ -28,7 +28,8 @@ public class MediaMuxerManager {
 
     private static final String TAG = MediaMuxerManager.class.getSimpleName();
 
-    private static final String DIR_NAME = "GL_AUDIO_VIDEO_RECODE";
+    private static final String DIR_NAME = "MediaCodec";
+    private static final String DIR_NAME_1 = "MediaCodecRecord";
 
     private static final SimpleDateFormat mDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
 
@@ -218,10 +219,13 @@ public class MediaMuxerManager {
      * @return 没有写权限 返回null
      */
     public static final File getCaptureFile(final String suffix) {
-        final File dir = new File(Environment.getExternalStorageDirectory(), DIR_NAME);
+        final File dir = new File(Environment.getExternalStorageDirectory(), DIR_NAME + "/" + DIR_NAME_1);
+        if (!dir.getParentFile().exists()) {
+            dir.getParentFile().mkdir();
+        }
         dir.mkdirs();
         if (dir.canWrite()) {
-            return new File(dir, getDateTimeString() + suffix);
+            return new File(dir, "record" + getDateTimeString() + suffix);
         }
         return null;
     }

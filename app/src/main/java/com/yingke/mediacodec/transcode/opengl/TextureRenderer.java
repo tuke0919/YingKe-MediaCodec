@@ -1,4 +1,4 @@
-package com.yingke.mediacodec.transcode;
+package com.yingke.mediacodec.transcode.opengl;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;

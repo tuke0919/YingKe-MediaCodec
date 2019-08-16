@@ -12,6 +12,7 @@ import android.widget.Button;
 import com.yingke.mediacodec.simple.MediaMuxerActivity;
 import com.yingke.mediacodec.player.MediaCodecPlayerActivity;
 import com.yingke.mediacodec.recorder.MediaCodecRecorderActivity;
+import com.yingke.mediacodec.transcode.ui.MediaCodecTransCodeActivity;
 
 import java.util.ArrayList;
 
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         add("分离抽取视频", MediaMuxerActivity.class);
         add("MediaCodec播放器", MediaCodecPlayerActivity.class);
         add("MediaCodec录视频", MediaCodecRecorderActivity.class);
+        add("MediaCodec转码", MediaCodecTransCodeActivity.class);
 
         mList.setAdapter(new MenuAdapter());
     }

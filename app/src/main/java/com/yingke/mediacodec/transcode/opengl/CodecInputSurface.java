@@ -1,4 +1,4 @@
-package com.yingke.mediacodec.transcode;
+package com.yingke.mediacodec.transcode.opengl;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -8,6 +8,9 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.view.Surface;
+
+import com.yingke.mediacodec.player.PlayerLog;
+import com.yingke.mediacodec.transcode.MediaCodecTransCoder;
 
 import java.nio.ByteBuffer;
 
@@ -38,6 +41,8 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
      * Creates a CodecInputSurface from a Surface.
      */
     public CodecInputSurface(Surface surface) {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------CodecInputSurface constructor--------");
+
         if (surface == null) {
             throw new NullPointerException();
         }
@@ -51,6 +56,8 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
      * 创建opengl 渲染器
      */
     public void createRender() {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------createRender--------");
+
         mTextureRender = new TextureRenderer();
         mTextureRender.surfaceCreated();
         mSurfaceTexture = new SurfaceTexture(mTextureRender.getTextureId());
@@ -63,6 +70,9 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
      * Prepares EGL.  We want a GLES 2.0 context and a surface that supports recording.
      */
     private void eglSetup() {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------eglSetup--------");
+
+
         mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
             throw new RuntimeException("unable to get EGL14 display");
@@ -116,13 +126,19 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
     }
 
 
-
+    /**
+     *
+     */
     public void awaitNewImage() {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------awaitNewImage--------");
+
         final int TIMEOUT_MS = 5000;
         synchronized (mFrameSyncObject) {
             // 如果帧不可用
             while (!mFrameAvailable) {
                 try {
+                    PlayerLog.e(MediaCodecTransCoder.TAG, "----------awaitNewImage wait-------- mFrameAvailable = " + mFrameAvailable);
+
                     // 等待5s，当前线程挂起，释放锁
                     mFrameSyncObject.wait(TIMEOUT_MS);
                     if (!mFrameAvailable) {
@@ -134,6 +150,8 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             }
             mFrameAvailable = false;
         }
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------awaitNewImage updateTexImage-------- mFrameAvailable = " + mFrameAvailable);
+
         mTextureRender.checkGlError("before updateTexImage");
         // 从图像流将纹理图像更新为最新帧
         mSurfaceTexture.updateTexImage();
@@ -143,6 +161,7 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
      * opengl 画纹理图像Id到Surface
      */
     public void drawImage() {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------drawImage--------");
         mTextureRender.drawFrame(mSurfaceTexture);
     }
 
@@ -154,6 +173,8 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             }
             // 帧可用
             mFrameAvailable = true;
+
+            PlayerLog.e(MediaCodecTransCoder.TAG, "----------onFrameAvailable notifyAll -------- mFrameAvailable = " + mFrameAvailable);
             mFrameSyncObject.notifyAll();
         }
     }
@@ -206,6 +227,8 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
      * Sends the presentation time stamp to EGL.  Time is expressed in nanoseconds.
      */
     public void setPresentationTime(long nsecs) {
+        PlayerLog.e(MediaCodecTransCoder.TAG, "----------setPresentationTime--------");
+
         EGLExt.eglPresentationTimeANDROID(mEGLDisplay, mEGLSurface, nsecs);
         checkEglError("eglPresentationTimeANDROID");
     }

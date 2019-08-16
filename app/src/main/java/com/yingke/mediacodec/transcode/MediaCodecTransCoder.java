@@ -10,6 +10,9 @@ import android.os.Build;
 import android.util.Log;
 
 
+import com.yingke.mediacodec.player.PlayerLog;
+import com.yingke.mediacodec.transcode.listener.SlimProgressListener;
+import com.yingke.mediacodec.transcode.opengl.CodecInputSurface;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +28,7 @@ import java.util.Set;
  */
 public class MediaCodecTransCoder {
 
-    private static final String TAG = "MediaCodecTransCoder";
+    public static final String TAG = "MediaCodecTransCoder";
     private static final boolean VERBOSE = true;
 
     private final static String MIME_TYPE = "video/avc";
@@ -138,7 +141,7 @@ public class MediaCodecTransCoder {
                         + " mVideoFrameRate = " + mVideoFrameRate);
 
             }
-
+            int muxerAudioTrackIndex = -1;
             if (audioExtractorTrackIndex >= 0) {
                 audioExtractor.seekTo(0, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
                 MediaFormat audioTrackFormat = audioExtractor.getTrackFormat(audioExtractorTrackIndex);
@@ -146,21 +149,29 @@ public class MediaCodecTransCoder {
                 outputMediaFormat(audioTrackFormat);
                 mMaxAudioIntputSize = audioTrackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
 
+                muxerAudioTrackIndex = mMediaMuxer.addTrack(audioTrackFormat);
+
             }
 
             if (newWidth == mOldWith && newHeight == mOldHeight) {
+                PlayerLog.d(TAG, "-------宽高相同，不解码，不编码-------");
+
                 // 宽高相同，不解码，不编码
                 int muxerVideoTrackIndex = mMediaMuxer.addTrack(videoExtractor.getTrackFormat(videoExtractorTrackIndex));
+                mMediaMuxer.start();
                 // 写抽取器到muxer
                 writeTrackToMuxer(videoExtractor, muxerVideoTrackIndex, mMaxVideoIntputSize, true);
 
             } else {
+                PlayerLog.d(TAG, "-------解码，在编码 ，使用新的格式-------");
+
                 // 解码，在编码 ，使用新的格式
                 decodeAndEncodeVideo(videoExtractor, videoExtractorTrackIndex);
 
             }
             // 直接写音频到muxer
-            int muxerAudioTrackIndex = mMediaMuxer.addTrack(audioExtractor.getTrackFormat(audioExtractorTrackIndex));
+            PlayerLog.d(TAG, "-------直接写音频到muxer，不解码，不编码------- muxerAudioTrackIndex = " + muxerAudioTrackIndex);
+
             writeTrackToMuxer(audioExtractor, muxerAudioTrackIndex, mMaxAudioIntputSize, false);
 
             result = true;
@@ -199,6 +210,7 @@ public class MediaCodecTransCoder {
      */
     private void writeTrackToMuxer(MediaExtractor mediaExtractor, int muxerTrackIndex, int maxIuputSize, boolean isVideo) {
 
+        PlayerLog.d(TAG, "-------writeTrackToMuxer 不解码，不编码 ------- isVideo = " + isVideo);
 
         if (muxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
@@ -224,7 +236,7 @@ public class MediaCodecTransCoder {
                     bufferInfo.presentationTimeUs = mediaExtractor.getSampleTime();
                 }
 
-                Log.e(TAG, "writeTrackToMuxer = "
+                PlayerLog.e(TAG, "writeTrackToMuxer = "
                         + " isVideo = " + isVideo
                         + " offset = " + bufferInfo.offset
                         + " size = " + bufferInfo.size
@@ -248,7 +260,10 @@ public class MediaCodecTransCoder {
      * @param videoExtractorTrackIndex
      */
     private void decodeAndEncodeVideo(MediaExtractor videoExtractor, int videoExtractorTrackIndex) {
+        PlayerLog.d(TAG, "-------decodeAndEncodeVideo-------");
+
         MediaFormat videoExtractorTrackFormat = videoExtractor.getTrackFormat(videoExtractorTrackIndex);
+        outputMediaFormat(videoExtractorTrackFormat);
 
         // 初始化解码器 和编码器
         prepareEncoder(videoExtractorTrackFormat);
@@ -265,26 +280,35 @@ public class MediaCodecTransCoder {
             decoderInputBuffers = mVideoDecoder.getInputBuffers();
             encoderOutputBuffers = mVideoEncoder.getOutputBuffers();
             int muxerVideoTrackIndex = -1;
+            PlayerLog.d(TAG, "-------开始循环 编解码-------");
 
             while (!outputDone) {
-
+                PlayerLog.e(TAG, "------- 外循环 -------" );
+                PlayerLog.d(TAG, "------- outputDone -------" + outputDone);
                 if (!inputDone) {
                     // 抽取一帧
+                    PlayerLog.d(TAG, "-------inputDone -------" + inputDone);
+                    PlayerLog.d(TAG, "-------抽取一帧 -------");
 
                     boolean extractorSampleDone = false;
                     int index = videoExtractor.getSampleTrackIndex();
+                    PlayerLog.d(TAG, "-------getSampleTrackIndex -------" + index);
                     if (index == -1) {
                         // 抽取采样结束 写EOS帧
                         extractorSampleDone = true;
                         int inputBufIndex = mVideoDecoder.dequeueInputBuffer(TIMEOUT_USEC);
+                        PlayerLog.d(TAG, "-------dequeueInputBuffer ------- inputBufIndex = " + inputBufIndex);
                         if (inputBufIndex >= 0) {
                             mVideoDecoder.queueInputBuffer(inputBufIndex, 0, 0, 0L, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             // 整个文件输入结束
                             inputDone = true;
+
+                            PlayerLog.d(TAG, "-------整个文件输入结束 ------- " + inputDone);
                         }
-                    } else if (index > 0) {
+                    } else if (index >= 0) {
 
                         int inputBufferIndex = mVideoDecoder.dequeueInputBuffer(TIMEOUT_USEC);
+                        PlayerLog.d(TAG, "-------dequeueInputBuffer ------- inputBufferIndex = " + inputBufferIndex);
                         if (inputBufferIndex >= 0) {
                             ByteBuffer inputBuffer;
                             if (Build.VERSION.SDK_INT < 21) {
@@ -292,16 +316,24 @@ public class MediaCodecTransCoder {
                             } else {
                                 inputBuffer = mVideoDecoder.getInputBuffer(inputBufferIndex);
                             }
+                            PlayerLog.d(TAG, "-------读取数据到buffer ------- inputBufferIndex = " + inputBufferIndex);
+
                             // 读取数据到buffer
                             int sampleSize = videoExtractor.readSampleData(inputBuffer, 0);
+                            PlayerLog.d(TAG, "-------读取数据到buffer ------- sampleSize = " + sampleSize);
+
                             if (sampleSize < 0) {
                                 mVideoDecoder.queueInputBuffer(inputBufferIndex, 0, 0, 0L, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                                 //  整个文件输入结束
                                 inputDone = true;
+                                PlayerLog.d(TAG, "-------整个文件输入结束 ------- " + inputDone);
+
                             } else {
                                 mVideoDecoder.queueInputBuffer(inputBufferIndex, 0, sampleSize, videoExtractor.getSampleTime(), 0);
                                 // 指针指向 下一帧
                                 videoExtractor.advance();
+
+                                PlayerLog.d(TAG, "-------指针指向 下一帧 -------" );
                             }
                         }
                     }
@@ -312,33 +344,45 @@ public class MediaCodecTransCoder {
                 // 编码器 输出可用
                 boolean encoderOutputAvailable = true;
 
+                PlayerLog.e(TAG, "------- 内循环 -------"
+                        + " decoderDone = " + decoderDone
+                        + " decoderOutputAvailable = " + decoderOutputAvailable + " "
+                        + " encoderOutputAvailable = " + encoderOutputAvailable );
+
                 while (decoderOutputAvailable || encoderOutputAvailable) {
 
                     // 获取带有数据输出buffer
                     int encoderStatus = mVideoEncoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
                     if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                        PlayerLog.d(TAG, "------- encoderStatus ------- MediaCodec.INFO_TRY_AGAIN_LATER ");
                         // 暂无编码器输出
                         encoderOutputAvailable = false;
 
                     } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                        PlayerLog.d(TAG, "------- encoderStatus ------- MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED ");
 
                         if (Build.VERSION.SDK_INT < 21) {
                             encoderOutputBuffers = mVideoEncoder.getOutputBuffers();
                         }
 
                     } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        PlayerLog.d(TAG, "------- encoderStatus ------- MediaCodec.INFO_OUTPUT_FORMAT_CHANGED ");
+
                         // 新格式，只会调用一次
                         MediaFormat newFormat = mVideoEncoder.getOutputFormat();
                         if (muxerVideoTrackIndex == -1) {
                             muxerVideoTrackIndex = mMediaMuxer.addTrack(newFormat);
                             mMuxerVideoTrackIndex = muxerVideoTrackIndex;
                             mMediaMuxer.start();
+
+                            PlayerLog.d(TAG, "------- Muxer.start() ------- mMuxerVideoTrackIndex = " + mMuxerVideoTrackIndex);
                         }
 
                     } else if (encoderStatus < 0) {
                         throw new RuntimeException("unexpected result from mVideoEncoder.dequeueOutputBuffer: " + encoderStatus);
                     } else {
                         // 编码器的输出Buffer 是要写到 混合器Muxer的
+                        PlayerLog.d(TAG, "------- encoderStatus ------- " + encoderStatus);
 
                         ByteBuffer encodedData;
                         if (Build.VERSION.SDK_INT < 21) {
@@ -349,8 +393,11 @@ public class MediaCodecTransCoder {
                         if (encodedData == null) {
                             throw new RuntimeException("encoderOutputBuffer " + encoderStatus + " was null");
                         }
+
                         if (mBufferInfo.size > 1) {
                             if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
+                                PlayerLog.d(TAG, "------- 向muxer写数据 writeSampleData ------- mBufferInfo.size = " + mBufferInfo.size);
+
                                 // 向muxer写数据
                                 mMediaMuxer.writeSampleData(mMuxerVideoTrackIndex, encodedData, mBufferInfo);
 
@@ -388,37 +435,49 @@ public class MediaCodecTransCoder {
                         }
                         // 编码器输出完成
                         outputDone = (mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
+                        PlayerLog.d(TAG, "------- 编码器输出完成 ------- outputDone = " + outputDone);
+
                         // 释放buffer给编码器(encoder)，或者 把buffer渲染到 Surface上(decoder)
                         mVideoEncoder.releaseOutputBuffer(encoderStatus, false);
+                        PlayerLog.d(TAG, "------- releaseOutputBuffer ------- encoderStatus = " + encoderStatus);
                     }
 
                     // 编码器没有输出 下次循环
                     if (encoderStatus != MediaCodec.INFO_TRY_AGAIN_LATER) {
+                        PlayerLog.d(TAG, "------- encoderStatus != MediaCodec.INFO_TRY_AGAIN_LATER ------- continue ");
                         continue;
                     }
                     // 编码器 有数据输出了
+                    PlayerLog.d(TAG, "------- 编码器 有数据输出了 ------- ");
 
                     if (!decoderDone) {
                         // 获取解码器输出buffer
 
                         int decoderStatus = mVideoDecoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
                         if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                            PlayerLog.d(TAG, "------- decoderStatus ------- MediaCodec.INFO_TRY_AGAIN_LATER ");
+
                             decoderOutputAvailable = false;
                         } else if (decoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                            PlayerLog.d(TAG, "------- decoderStatus ------- MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED ");
 
                         } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                            PlayerLog.d(TAG, "------- decoderStatus ------- MediaCodec.INFO_OUTPUT_FORMAT_CHANGED ");
+
                             MediaFormat newFormat = mVideoDecoder.getOutputFormat();
                             Log.e(TAG, "newFormat = " + newFormat);
                         } else if (decoderStatus < 0) {
                             throw new RuntimeException("unexpected result from mVideoDecoder.dequeueOutputBuffer: " + decoderStatus);
                         } else {
                             boolean doRender = false;
-
+                            PlayerLog.d(TAG, "-------可以渲染  ------- mBufferInfo.size = " + mBufferInfo.size);
                             // 可以渲染
                             doRender = mBufferInfo.size != 0;
 
                             // 解码器的输出 是要渲染到 Surface，当然也可以 写到buffer, 这里是把Buffer给SurfaceTexture的图像流
                             mVideoDecoder.releaseOutputBuffer(decoderStatus, doRender);
+                            PlayerLog.d(TAG, "------- mVideoDecoder releaseOutputBuffer  ------- ");
+
                             if (doRender) {
                                 boolean errorWait = false;
                                 try {
@@ -433,13 +492,18 @@ public class MediaCodecTransCoder {
                                     mInputSurface.setPresentationTime(mBufferInfo.presentationTimeUs * 1000);
 
                                     if (mListener != null) {
+                                        PlayerLog.d(TAG, "------- mVideoDecoder onProgress  ------- " + "presentationTimeUs = " + mBufferInfo.presentationTimeUs);
                                         mListener.onProgress((float) mBufferInfo.presentationTimeUs / (float) mOldDuration * 100);
                                     }
                                     // 把当前帧 送给 后边的编码器，去编码
                                     mInputSurface.swapBuffers();
+                                    PlayerLog.d(TAG, "-------swapBuffers  ------- ");
                                 }
                             }
                             if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                                PlayerLog.d(TAG, "------- decoder EOS ------- "
+                                        + "decoderDone = " + decoderDone + " "
+                                        + "decoderOutputAvailable = " + decoderOutputAvailable);
                                 decoderDone = true;
                                 decoderOutputAvailable = false;
                                 Log.e(TAG, "decoder stream end");
@@ -567,8 +631,11 @@ public class MediaCodecTransCoder {
 
     /**
      * Configures encoder and muxer state, and prepares the input Surface.
+     *  初始化编解码器
      */
     private void prepareEncoder(MediaFormat videoDecoderInputFormat) {
+        PlayerLog.d(TAG, "-------decodeAndEncodeVideo-------");
+
         mBufferInfo = new MediaCodec.BufferInfo();
 
 
@@ -592,9 +659,8 @@ public class MediaCodecTransCoder {
         videoEncoderFormat.setInteger(MediaFormat.KEY_BIT_RATE, mNewBitRate);
         videoEncoderFormat.setInteger(MediaFormat.KEY_FRAME_RATE, OUTPUT_FRAME_RATE);
         videoEncoderFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, OUTPUT_IFRAME_INTERVAL);
-        if (VERBOSE) {
-            Log.d(TAG, "format: " + videoEncoderFormat);
-        }
+
+        PlayerLog.e(TAG, "videoEncoderFormat: " + videoEncoderFormat);
 
         // 配置编码器
         mVideoEncoder.configure(videoEncoderFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -609,6 +675,8 @@ public class MediaCodecTransCoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        PlayerLog.e(TAG, "videoDecoderInputFormat: " + videoDecoderInputFormat);
+
         // 创建opengl 渲染器
         mInputSurface.createRender();
         // 配置 解码器 传入一个Surface，解码数据渲染到surface

@@ -1,4 +1,4 @@
-package com.yingke.mediacodec.transcode;
+package com.yingke.mediacodec.transcode.listener;
 
 public interface SlimProgressListener {
 
