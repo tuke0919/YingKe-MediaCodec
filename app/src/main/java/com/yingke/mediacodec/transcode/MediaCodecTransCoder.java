@@ -201,7 +201,7 @@ public class MediaCodecTransCoder {
     }
 
     /**
-     * 不解码，编码直接写到muxer
+     * 不解码，编码extractor直接写到muxer
      *
      * @param mediaExtractor
      * @param muxerTrackIndex
@@ -281,6 +281,9 @@ public class MediaCodecTransCoder {
             encoderOutputBuffers = mVideoEncoder.getOutputBuffers();
             int muxerVideoTrackIndex = -1;
             PlayerLog.d(TAG, "-------开始循环 编解码-------");
+
+            // 1, 每个循环抽取 一帧
+            // 2，内循环 遍历 编码器和解码器的输出buffer
 
             while (!outputDone) {
                 PlayerLog.e(TAG, "------- 外循环 -------" );
