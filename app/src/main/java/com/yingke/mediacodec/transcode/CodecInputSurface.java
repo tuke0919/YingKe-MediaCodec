@@ -17,13 +17,23 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
     private EGLSurface mEGLSurface = EGL14.EGL_NO_SURFACE;
+
+    // 编码器输入Surface
+    private Surface mEncoderInputSurface;
+
+    // 解码器输出图像流
     private SurfaceTexture mSurfaceTexture;
-    private Surface mSurface;
-    private Surface mDrawSurface;
+    // 解码器输出Surface
+    private Surface mDecoderOutputSurface;
+
+    // 图像帧同步对象
     private final Object mFrameSyncObject = new Object();
     private boolean mFrameAvailable;
+
     private ByteBuffer mPixelBuf;
+    // Open GL 渲染器
     private TextureRenderer mTextureRender;
+
     /**
      * Creates a CodecInputSurface from a Surface.
      */
@@ -32,17 +42,21 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             throw new NullPointerException();
         }
 
-        mSurface = surface;
+        mEncoderInputSurface = surface;
         eglSetup();
 
     }
 
+    /**
+     * 创建opengl 渲染器
+     */
     public void createRender() {
         mTextureRender = new TextureRenderer();
         mTextureRender.surfaceCreated();
         mSurfaceTexture = new SurfaceTexture(mTextureRender.getTextureId());
         mSurfaceTexture.setOnFrameAvailableListener(this);
-        mDrawSurface = new Surface(mSurfaceTexture);
+        // 承载图像流的Surface，作为解码器的输出，解码器输出绘制在此Surface
+        mDecoderOutputSurface = new Surface(mSurfaceTexture);
     }
 
     /**
@@ -87,8 +101,9 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
         int[] surfaceAttribs = {
                 EGL14.EGL_NONE
         };
-        mEGLSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, configs[0], mSurface,
-                surfaceAttribs, 0);
+
+        // 通过Surface 创建在在EGL环境下的EGLSurface，以后使用的 Open Gl绘制纹理图，就是在这个EGLSurface上绘制，相当于绘制到 参数Surface上
+        mEGLSurface = EGL14.eglCreateWindowSurface(mEGLDisplay, configs[0], mEncoderInputSurface, surfaceAttribs, 0);
         checkEglError("eglCreateWindowSurface");
     }
 
@@ -105,8 +120,10 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
     public void awaitNewImage() {
         final int TIMEOUT_MS = 5000;
         synchronized (mFrameSyncObject) {
+            // 如果帧不可用
             while (!mFrameAvailable) {
                 try {
+                    // 等待5s，当前线程挂起，释放锁
                     mFrameSyncObject.wait(TIMEOUT_MS);
                     if (!mFrameAvailable) {
                         throw new RuntimeException("Surface frame wait timed out");
@@ -118,9 +135,13 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             mFrameAvailable = false;
         }
         mTextureRender.checkGlError("before updateTexImage");
+        // 从图像流将纹理图像更新为最新帧
         mSurfaceTexture.updateTexImage();
     }
 
+    /**
+     * opengl 画纹理图像Id到Surface
+     */
     public void drawImage() {
         mTextureRender.drawFrame(mSurfaceTexture);
     }
@@ -131,13 +152,14 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             if (mFrameAvailable) {
                 throw new RuntimeException("mFrameAvailable already set, frame could be dropped");
             }
+            // 帧可用
             mFrameAvailable = true;
             mFrameSyncObject.notifyAll();
         }
     }
 
     public Surface getSurface() {
-        return mDrawSurface;
+        return mDecoderOutputSurface;
     }
 
     /**
@@ -154,13 +176,13 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
             EGL14.eglTerminate(mEGLDisplay);
         }
 
-        mSurface.release();
+        mEncoderInputSurface.release();
 
         mEGLDisplay = EGL14.EGL_NO_DISPLAY;
         mEGLContext = EGL14.EGL_NO_CONTEXT;
         mEGLSurface = EGL14.EGL_NO_SURFACE;
 
-        mSurface = null;
+        mEncoderInputSurface = null;
     }
 
     /**

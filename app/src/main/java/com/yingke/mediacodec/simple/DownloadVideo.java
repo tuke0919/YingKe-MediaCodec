@@ -177,6 +177,7 @@ public class DownloadVideo {
         // 开始合成
         mediaMuxer.start();
 
+        // 循环直接写 视频到 muxer
         if (videoMuxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             bufferInfo.presentationTimeUs = 0;
@@ -219,6 +220,7 @@ public class DownloadVideo {
             mCallback.onTextCallback("doDownload : videoMuxer end ");
         }
 
+        // 循环写音频 到muxer
         if (audioMuxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             bufferInfo.presentationTimeUs = 0;
