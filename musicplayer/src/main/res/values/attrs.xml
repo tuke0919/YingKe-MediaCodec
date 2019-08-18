@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="ProgressView">
+        <attr name="morph" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="PlayButton">
+        <attr name="mode" format="enum">
+            <enum name="play" value="0" />
+            <enum name="pause" value="1" />
+        </attr>
+    </declare-styleable>
+
+</resources>

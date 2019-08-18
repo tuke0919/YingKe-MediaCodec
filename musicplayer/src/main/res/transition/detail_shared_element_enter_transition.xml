@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="@integer/anim_duration_default"
+    android:interpolator="@android:interpolator/accelerate_quad">
+
+    <!--Progress-->
+    <transition class="com.yingke.musicplayer.media_ui.transition.ProgressViewTransition" />
+    <!--Cover-->
+    <transition class="com.andremion.music.MusicCoverViewTransition" />
+    <!--Others-->
+    <transitionSet>
+        <changeBounds />
+        <changeTransform />
+        <changeClipBounds />
+        <changeImageTransform />
+    </transitionSet>
+
+</transitionSet>

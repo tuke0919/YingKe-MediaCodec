@@ -1,0 +1,45 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- Color palette-->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <!--Translucent status bar-->
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
+    <style name="AppTheme.Main" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowSharedElementsUseOverlay">false</item>
+        <item name="android:windowExitTransition">
+            @transition/list_content_exit_transition
+        </item>
+        <item name="android:windowReenterTransition">
+            @transition/list_content_reenter_transition
+        </item>
+        <item name="android:windowSharedElementExitTransition">
+            @transition/list_shared_element_exit_transition
+        </item>
+        <item name="android:windowSharedElementReenterTransition">
+            @transition/list_shared_element_reenter_transition
+        </item>
+    </style>
+
+    <style name="AppTheme.Detail" parent="Theme.AppCompat.NoActionBar" >
+        <item name="android:windowEnterTransition">
+            @transition/detail_content_enter_transition
+        </item>
+        <item name="android:windowReturnTransition">
+            @transition/detail_content_return_transition
+        </item>
+        <item name="android:windowSharedElementEnterTransition">
+            @transition/detail_shared_element_enter_transition
+        </item>
+        <item name="android:windowSharedElementReturnTransition">
+            @transition/detail_shared_element_return_transition
+        </item>
+
+    </style>
+
+</resources>
