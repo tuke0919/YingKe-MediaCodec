@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">YingKe-MediaCodec</string>
+
+    <string name="audio_dialog_play_text">播放</string>
+    <string name="audio_dialog_stop_text">停止</string>
+    <string name="picture_quit_audio">退出</string>
+    <string name="audio_dialog_pause_text">暂停</string>
 </resources>

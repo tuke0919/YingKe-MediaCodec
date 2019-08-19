@@ -29,6 +29,10 @@
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"/>
 
         <activity android:name=".simple.MediaMuxerActivity" />
+        <activity
+            android:name=".preview.video.PreviewVideoActivity"
+            android:screenOrientation="portrait"
+            />
 
         <activity
             android:name=".player.MediaCodecPlayerActivity"

@@ -17,7 +17,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-import com.yingke.mediacodec.FileUtils;
+import com.yingke.mediacodec.utils.FileUtils;
 import com.yingke.mediacodec.R;
 import com.yingke.mediacodec.transcode.MediaCodecTransCodeManager;
 import com.yingke.mediacodec.transcode.listener.ProgressListener;
