@@ -28,4 +28,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation "com.android.support:recyclerview-v7:$APPCOMPAT_VERSION"
     implementation 'com.google.android.exoplayer:exoplayer:2.7.0'
+
+    implementation 'com.parse.bolts:bolts-tasks:1.4.0'
+
 }

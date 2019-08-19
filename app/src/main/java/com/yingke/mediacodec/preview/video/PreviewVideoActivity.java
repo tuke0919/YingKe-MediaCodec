@@ -18,8 +18,12 @@ import com.yingke.mediacodec.R;
 /**
  * 简单的视频预览
  */
-public class PreviewVideoActivity extends FragmentActivity implements MediaPlayer.OnErrorListener, MediaPlayer.OnPreparedListener,
-        MediaPlayer.OnCompletionListener, View.OnClickListener {
+public class PreviewVideoActivity extends FragmentActivity implements
+        MediaPlayer.OnErrorListener,
+        MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnCompletionListener,
+        View.OnClickListener {
+
     public static final String KEY_VIDEO_PATH = "videoPath";
 
     private String videoPath = "";
