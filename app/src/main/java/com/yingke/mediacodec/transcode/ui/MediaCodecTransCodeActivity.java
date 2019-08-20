@@ -117,7 +117,7 @@ public class MediaCodecTransCodeActivity extends AppCompatActivity {
                             + "fileSize:" + Formatter.formatFileSize(MediaCodecTransCodeActivity.this,fileSize) +"\n" +"duration(ms):"+duration;
                     mVideoInputInfo.setText(before);
 
-                    final String destPath = FileUtils.getOutputFile("MediaCodecTranCode", "trancode", ".mp4").getAbsolutePath();
+                    final String destPath = FileUtils.getTrancodeOutputFile("trancode", ".mp4").getAbsolutePath();
                     MediaCodecTransCodeManager.convertVideo(inputPath, destPath, 720, 720, 200 * 360 * 30,
                             new ProgressListener() {
                         @Override
