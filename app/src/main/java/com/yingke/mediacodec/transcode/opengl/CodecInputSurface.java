@@ -14,6 +14,9 @@ import com.yingke.mediacodec.transcode.MediaCodecTransCoder;
 
 import java.nio.ByteBuffer;
 
+/**
+ * 实现编码器输如Surface和解码器输出Surface，并互相传输数据
+ */
 public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListener {
     private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
@@ -26,6 +29,7 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
 
     // 解码器输出图像流
     private SurfaceTexture mSurfaceTexture;
+
     // 解码器输出Surface
     private Surface mDecoderOutputSurface;
 
@@ -53,7 +57,7 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
     }
 
     /**
-     * 创建opengl 渲染器
+     * 创建opengl 渲染器，主要是 绘值 纹理id到 编码器的输入Surface
      */
     public void createRender() {
         PlayerLog.e(MediaCodecTransCoder.TAG, "----------createRender--------");
@@ -127,7 +131,7 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
 
 
     /**
-     *
+     * 等待可用帧
      */
     public void awaitNewImage() {
         PlayerLog.e(MediaCodecTransCoder.TAG, "----------awaitNewImage--------");

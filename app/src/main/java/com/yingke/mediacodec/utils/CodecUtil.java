@@ -5,6 +5,8 @@ import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.util.Log;
 
+import com.yingke.mediacodec.player.PlayerLog;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -45,7 +47,7 @@ public class CodecUtil {
     }
 
     /**
-     * 获取并且选择 收取器轨道
+     * 获取并且选择 分离器轨道
      * @param mediaExtractor
      * @param isVideo
      * @return
@@ -55,7 +57,7 @@ public class CodecUtil {
         for (int index = 0 ; index < mediaExtractor.getTrackCount(); index ++) {
             MediaFormat mediaFormat  = mediaExtractor.getTrackFormat(index);
 
-            Log.e(TAG, "getAndSelectTrackIndex " + " index = " + index);
+            PlayerLog.e(TAG, "getAndSelectTrackIndex " + " index = " + index);
             outputMediaFormat(mediaFormat);
 
             if (isVideo) {
