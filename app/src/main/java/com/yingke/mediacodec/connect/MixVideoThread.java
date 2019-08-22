@@ -13,6 +13,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.yingke.mediacodec.compose.AudioCodec.TAG;
+
 /**
  * 功能：
  * </p>
@@ -162,33 +164,31 @@ public class MixVideoThread extends Thread {
 
         // 解码器 输出bufferInfo
         MediaCodec.BufferInfo decoderOutputInfo = new MediaCodec.BufferInfo();
-
-
         // 编码器 输出bufferInfo
         MediaCodec.BufferInfo encoderOutputInfo = new MediaCodec.BufferInfo();
 
+        long start = System.currentTimeMillis();
         while (!totalOutputDone) {
-
             if(!currentVideoInputDone){
                 // 每次读取一帧数据
                 readOneFrameData(currentDecoder, currentExtractor, decoderInputBuffers);
             }
-
-            while (!decoderOutputDone || ! encoderOutputDone){
-
-
-
+            while (!decoderOutputDone || !encoderOutputDone){
+                // 解码器 解码输出
+                decodeVideoData(decoderOutputInfo);
+                if (!encoderOutputDone) {
+                    // 编码器 编码数据 到混合器
+                    encodeVideoDataToMuxer(encoderOutputInfo);
+                }
             }
-
-
-
         }
 
-
-
-
-
-
+        // 释放最后一个decoder
+        mFinalEncoder.stop();
+        mFinalEncoder.release();
+        mMediaMuxer.writeVideoEnd();
+        long end = System.currentTimeMillis();
+        Log.e(TAG, "---视频编码完成---视频编码耗时-==" + (end - start));
     }
 
     /**
@@ -361,6 +361,50 @@ public class MixVideoThread extends Thread {
                 break;
         }
 
+    }
+
+    /**
+     * 编码器 编码数据 到混合器
+     * @param encodeOutputInfo
+     */
+    public void encodeVideoDataToMuxer(MediaCodec.BufferInfo encodeOutputInfo) {
+        int encodeOutputState = mFinalEncoder.dequeueOutputBuffer(encodeOutputInfo, TIMEOUT_USEC);
+        switch (encodeOutputState) {
+            case MediaCodec.INFO_TRY_AGAIN_LATER:
+                // 说明没有可用的编码器
+                encoderOutputDone = true;
+                break;
+            case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                encoderOutputBuffers = mFinalEncoder.getOutputBuffers();
+                break;
+            case  MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                // 编码器输出格式变化
+                MediaFormat newFormat = mFinalEncoder.getOutputFormat();
+                // 混合器添加输出格式
+                mMediaMuxer.addTrackFormat(OnMuxerListener.MediaType.MEDIA_TYPE_VIDEO, newFormat);
+                Log.e("videoo", "---添加MediaFormat");
+                break;
+            default:
+                if (encodeOutputState >= 0) {
+                    // 整个输出流程结束
+                    totalOutputDone = (encodeOutputInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
+                    if (totalOutputDone) {
+                        break;
+                    }
+                    if ((encodeOutputInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        encodeOutputInfo.size = 0;
+                    }
+                    // 获取 编码器输出Buffer
+                    ByteBuffer encoderOutputBuffer = encoderOutputBuffers[encodeOutputState];
+                    if (encodeOutputInfo.size > 0) {
+                        Log.e("videoo", "--写入混合器的数据----presentationTime===" + encodeOutputInfo.presentationTimeUs + "===size===" + encodeOutputInfo.size + "----flags==" + encodeOutputInfo.flags);
+                        mMediaMuxer.writeSampleData(OnMuxerListener.MediaType.MEDIA_TYPE_VIDEO, encoderOutputBuffer, encodeOutputInfo);
+                    }
+                    // 释放Buffer 给编码器
+                    mFinalEncoder.releaseOutputBuffer(encodeOutputState, false);
+                }
+                break;
+        }
     }
 
 

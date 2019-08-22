@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.yinge.picture.selector.views.SquareRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!--图片-->
+    <ImageView
+        android:id="@+id/selector_item_picture"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/item_image_placeholder"/>
+    <!--选择图标-->
+    <LinearLayout
+        android:id="@+id/selector_item_check_layout"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentRight="true"
+        android:gravity="right"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/selector_item_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/icon_checkbox_selector"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</com.yinge.picture.selector.views.SquareRelativeLayout>

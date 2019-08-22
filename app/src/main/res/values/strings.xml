@@ -5,4 +5,27 @@
     <string name="audio_dialog_stop_text">停止</string>
     <string name="picture_quit_audio">退出</string>
     <string name="audio_dialog_pause_text">暂停</string>
+
+    <string name="selector_image_error">图片已损坏</string>
+    <string name="selector_video_error">视频已损坏</string>
+    <string name="selector_audio_error">音频已损坏</string>
+
+    <string name="selector_title_all_audio">所有音频</string>
+    <string name="selector_title_camera_roll">相机胶卷</string>
+
+    <string name="selector_jurisdiction">读取内存卡权限被拒绝</string>
+    <string name="selector_camera_permission_ungranted">获取系统相机权限被拒绝</string>
+    <string name="selector_audio_permission_ungranted">获取系统录音权限被拒绝</string>
+
+    <string name="selector_tape">录音</string>
+    <string name="selector_take_picture">拍摄</string>
+
+    <string name="selector_picture_max_num">你最多可以选择%1$s张图片</string>
+    <string name="picture_min_video_num">视频最低选择不能少于%1$s个</string>
+    <string name="selector_picture_video_max_num">你最多可以选择%1$s个视频</string>
+    <string name="selector_picture_audio_max_num">你最多可以选择%1$s个音频</string>
+    <string name="selector_picture_rule">不能同时选择图片或视频</string>
+
+
+
 </resources>

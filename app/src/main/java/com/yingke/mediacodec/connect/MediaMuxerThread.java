@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * 功能：使用MedaiCodec做视频拼接
+ * 功能：使用MedaiCodec做多个视频拼接
  * </p>
  * <p>Copyright corp.netease.com 2018 All right reserved </p>
  *
@@ -33,18 +33,27 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
     private String mOutputFilePath;
     private MediaMuxer mMediaMuxer;
 
+    // 混合多个音频线程
+    private MixAudioThread mAudioThread;
+    // 混合多个视频线程
+    private MixVideoThread mVideoThread;
+    // 音频轨道
     private int mMuxerAudioTrack;
+    // 视频轨道
     private int mMuxerVideoTrack;
-
+    // 音频是否添加混合器
     private volatile boolean mIsAudioAdded = false;
+    // 视频是否添加混合器
     private volatile boolean mIsVideoAdded = false;
-
+    // 视频结束
     private boolean mIsVideoEnd = false;
+    // 音频结束
     private boolean mIsAudioEnd = false;
 
+    // 混合器是否开始
     private boolean mIsMuxerStarted = false;
 
-
+    // 输出文件信息
     private List<VideoInfo> mInputVideos;
 
 
@@ -62,10 +71,12 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
     public void run() {
         super.run();
 
-
-
+        initMuxer();
+        mAudioThread = new MixAudioThread(mInputVideos, this);
+        mVideoThread = new MixVideoThread(mInputVideos, this);
+        mAudioThread.start();
+        mVideoThread.start();
     }
-
 
     /**
      * 初始化混合器
@@ -183,9 +194,4 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
         }
 
     }
-
-
-
-
-
 }

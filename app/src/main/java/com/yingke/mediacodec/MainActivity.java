@@ -34,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         add("MediaCodec播放器", MediaCodecPlayerActivity.class);
         add("MediaCodec录视频", MediaCodecRecorderActivity.class);
         add("MediaCodec转码", MediaCodecTransCodeActivity.class);
-//        add("MusicPlayer", com.yingke.musicplayer.media_ui.activities.MainActivity.class);
+        add("MediaCodec音频分离和混合", MediaCodecTransCodeActivity.class);
+        add("MediaCodec多视频拼接", MediaCodecTransCodeActivity.class);
 
         mList.setAdapter(new MenuAdapter());
     }
