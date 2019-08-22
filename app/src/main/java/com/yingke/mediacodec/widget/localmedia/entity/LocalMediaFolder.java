@@ -30,8 +30,9 @@ public class LocalMediaFolder implements Parcelable {
     private int checkedNum;
     // 是否被选中
     private boolean isChecked;
-    // 文件夹中图片
-    private List<LocalMediaResource> folderImages = new ArrayList<LocalMediaResource>();
+
+    // 文件夹中 媒体文件
+    private List<LocalMediaResource> folderMedias = new ArrayList<LocalMediaResource>();
 
     public String getFolderName() {
         return folderName;
@@ -81,12 +82,12 @@ public class LocalMediaFolder implements Parcelable {
         isChecked = checked;
     }
 
-    public List<LocalMediaResource> getFolderImages() {
-        return folderImages;
+    public List<LocalMediaResource> getFolderMedias() {
+        return folderMedias;
     }
 
-    public void setFolderImages(List<LocalMediaResource> folderImages) {
-        this.folderImages = folderImages;
+    public void setFolderMedias(List<LocalMediaResource> folderMedias) {
+        this.folderMedias = folderMedias;
     }
 
     public static Creator<LocalMediaFolder> getCREATOR() {
@@ -106,7 +107,7 @@ public class LocalMediaFolder implements Parcelable {
         dest.writeInt(this.imageNum);
         dest.writeInt(this.checkedNum);
         dest.writeByte(this.isChecked ? (byte) 1 : (byte) 0);
-        dest.writeTypedList(this.folderImages);
+        dest.writeTypedList(this.folderMedias);
     }
 
     public LocalMediaFolder() {
@@ -119,7 +120,7 @@ public class LocalMediaFolder implements Parcelable {
         this.imageNum = in.readInt();
         this.checkedNum = in.readInt();
         this.isChecked = in.readByte() != 0;
-        this.folderImages = in.createTypedArrayList(LocalMediaResource.CREATOR);
+        this.folderMedias = in.createTypedArrayList(LocalMediaResource.CREATOR);
     }
 
     public static final Creator<LocalMediaFolder> CREATOR = new Creator<LocalMediaFolder>() {

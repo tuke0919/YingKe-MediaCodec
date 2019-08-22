@@ -3,9 +3,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <Button android:layout_width="match_parent"
+    <Button
+        android:id="@+id/main_function_btn"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:textColor="#FF2B2B2B"
-        android:id="@+id/mBtn" />
+        android:textColor="#FFFFFF"
+         />
 </RelativeLayout>

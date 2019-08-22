@@ -24,26 +24,40 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".connect.ui.MediaCodecVideoConnectActivity">
-        </activity>
+
         <activity
-            android:name=".recorder.MediaCodecRecorderActivity"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"/>
-        <activity android:name=".simple.MediaMuxerActivity"/>
-        <activity
-            android:name=".preview.video.PreviewVideoActivity"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name=".player.MediaCodecPlayerActivity"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"/>
-        <activity android:name=".transcode.ui.MediaCodecTransCodeActivity"/>
-        <activity android:name=".MainActivity">
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/app_name"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity android:name=".player.MediaCodecPlayerActivity"/>
+
+        <activity android:name=".recorder.MediaCodecRecorderActivity"/>
+
+        <activity
+            android:name=".transcode.ui.MediaCodecTransCodeActivity"
+            android:screenOrientation="portrait"
+            android:label="MediaCodec转码"
+            />
+
+        <activity
+            android:name=".preview.video.PreviewVideoActivity"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".simple.MediaMuxerActivity"
+            android:label="MediaCodec下载"/>
+
+        <activity
+            android:name=".connect.ui.MediaCodecVideoConnectActivity"
+            android:label="MediaCodec多视频拼接"/>
+
     </application>
 
 </manifest>

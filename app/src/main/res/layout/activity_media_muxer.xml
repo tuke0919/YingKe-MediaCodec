@@ -6,6 +6,22 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:paddingTop="@dimen/status_bar_height_api_23"
+        >
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar_actionbar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="?attr/colorPrimary">
+        </android.support.v7.widget.Toolbar>
+    </FrameLayout>
+
+
     <Button
         android:id="@+id/muxer_btn"
         android:layout_width="match_parent"

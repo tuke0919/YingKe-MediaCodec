@@ -8,6 +8,7 @@
 
     <color name="color_696969">#999999</color>
     <color name="white">#ffffff</color>
+    <color name="gray">#808080</color>
 
     <color name="color_333333">#333333</color>
     <color name="color_eeeeee">#eeeeee</color>
@@ -35,6 +36,11 @@
     <color name="bar_grey_90">#dd393a3e</color>
     <color name="color_4d4d4d">#4d4d4d</color>
     <color name="color_orange">#E0FF6100</color>
+
+    <color name="second_title_color">#4a4a4a</color>
+
+    <!--页面背景色-->
+    <color name="theme_window_color">#f3f5f7</color>f2f2f2
 
 
 </resources>

@@ -1,12 +1,41 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- Support library compatibility -->
+        <item name="windowActionBar">false</item>
+        <!-- 都是没有ActionBar的-->
+        <item name="android:windowNoTitle">true</item>
+
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimaryDark">@color/gray</item>
+
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="toolbarStyle">@style/theme_toolbar_base</item>
+
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:windowActionBarOverlay">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="windowActionModeOverlay">true</item>
+
+        <!-- menu 字体和颜色-->
+        <item name="actionMenuTextAppearance">@style/theme_menu_text_style</item>
+        <item name="actionMenuTextColor">@drawable/theme_menu_text_selector</item>
+        <!-- window 背景-->
+        <item name="android:windowBackground">@color/theme_window_color</item>
+
     </style>
+
+    <style name="theme_toolbar_base" parent="Widget.AppCompat.Toolbar">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="contentInsetStart">0dp</item>
+    </style>
+
+    <style name="theme_menu_text_style">
+        <item name="android:textSize">13sp</item>
+    </style>
+
 
 
     <style name="Audio_Dialog_Style_Anim">

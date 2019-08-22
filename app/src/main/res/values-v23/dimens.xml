@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- api23 以上 透明状态栏 布局会顶上去-->
+    <dimen name="status_bar_height_api_23">25dp</dimen>
+</resources>

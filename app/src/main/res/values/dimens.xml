@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--首页API 23以下不显示沉浸式状态栏-->
+    <dimen name="status_bar_height_api_23">0dp</dimen>
+</resources>

@@ -7,12 +7,13 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.TextView;
 
+import com.yingke.mediacodec.BaseActivity;
 import com.yingke.mediacodec.R;
 
 /**
  * 功能：MediaExtractor + MediaMuxer  分离抽取 ，合成视频
  */
-public class MediaMuxerActivity extends AppCompatActivity {
+public class MediaMuxerActivity extends BaseActivity {
 
     private DownloadVideo mDownloadVideo;
     private TextView mMuxerBtn;
@@ -39,6 +40,16 @@ public class MediaMuxerActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean hasToolbar() {
+        return true;
+    }
+
+    @Override
+    protected boolean isTransStatusBar() {
+        return true;
     }
 
     @Override

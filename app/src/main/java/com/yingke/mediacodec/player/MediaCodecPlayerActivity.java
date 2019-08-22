@@ -3,12 +3,13 @@ package com.yingke.mediacodec.player;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+import com.yingke.mediacodec.BaseActivity;
 import com.yingke.mediacodec.R;
 
 /**
  * 基于 MediaCodec 的播放器
  */
-public class MediaCodecPlayerActivity extends AppCompatActivity {
+public class MediaCodecPlayerActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

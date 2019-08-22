@@ -57,7 +57,7 @@ public class LocalMediaModel {
     /**
      * 初始化数据
      */
-    public void initDatas(){
+    public void requestMedias(){
         rxPermissions.request(Manifest.permission.READ_EXTERNAL_STORAGE)
                 .subscribe(new Observer<Boolean>() {
                     @Override
@@ -103,7 +103,7 @@ public class LocalMediaModel {
                         LocalMediaFolder firstFolder = imageFoldersList.get(0);
                         firstFolder.setChecked(true);
 
-                        List<LocalMediaResource> firstFolderImages = firstFolder.getFolderImages();
+                        List<LocalMediaResource> firstFolderImages = firstFolder.getFolderMedias();
                         if (firstFolderImages != null && firstFolderImages.size() > 0) {
                             currentFolderMedias.clear();
                             currentFolderMedias.addAll(firstFolderImages);

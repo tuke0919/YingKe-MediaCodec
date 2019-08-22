@@ -10,7 +10,7 @@
     android:orientation="vertical"
     android:padding="15dp">
 
-    <com.yinge.picture.selector.dialog.SelectorWaitingView
+    <com.yingke.mediacodec.widget.dialog.SelectorWaitingView
         android:layout_width="30dp"
         android:layout_height="30dp" />
 

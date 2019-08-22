@@ -172,7 +172,7 @@ public class LocalMediaLoader {
 
                                            // 添加到相应相册文件夹
                                            LocalMediaFolder folder = createImageFolder(mediaPath, imageFoldersList);
-                                           List<LocalMediaResource> images = folder.getFolderImages();
+                                           List<LocalMediaResource> images = folder.getFolderMedias();
                                            images.add(mediaResource);
                                            folder.setImageNum(folder.getImageNum() + 1);
 
@@ -194,7 +194,7 @@ public class LocalMediaLoader {
                                            String title = LocalMediaConfig.getInstance().getMediaType() == MediaMimeType.ofAudio() ?
                                                    activity.getString(R.string.selector_title_all_audio) : activity.getString(R.string.selector_title_camera_roll);
                                            allImagesFolder.setFolderName(title);
-                                           allImagesFolder.setFolderImages(allImagesList);
+                                           allImagesFolder.setFolderMedias(allImagesList);
                                        }
                                        if (callback != null) {
                                            callback.loadCompleted(imageFoldersList);
@@ -297,7 +297,7 @@ public class LocalMediaLoader {
         Collections.sort(imageFoldersList, new Comparator<LocalMediaFolder>() {
             @Override
             public int compare(LocalMediaFolder lhs, LocalMediaFolder rhs) {
-                if (lhs.getFolderImages() == null || rhs.getFolderImages() == null) {
+                if (lhs.getFolderMedias() == null || rhs.getFolderMedias() == null) {
                     return 0;
                 }
                 int lsize = lhs.getImageNum();

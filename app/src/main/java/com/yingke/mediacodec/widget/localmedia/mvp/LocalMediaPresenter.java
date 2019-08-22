@@ -42,6 +42,15 @@ public class LocalMediaPresenter {
     }
 
     /**
+     * 请求媒体文件
+     */
+    public void requestMedias() {
+        if (mLocalMediaModel != null) {
+            mLocalMediaModel.requestMedias();
+        }
+    }
+
+    /**
      * 销毁
      */
     public void onDestroy() {

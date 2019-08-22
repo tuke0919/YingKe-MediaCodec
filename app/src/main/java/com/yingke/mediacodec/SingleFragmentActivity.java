@@ -19,9 +19,8 @@ import android.view.View;
  * 最后修改人：无
  * <p>
  */
-public abstract class SingleFragmentActivity extends AppCompatActivity {
+public abstract class SingleFragmentActivity extends BaseActivity {
 
-    protected Toolbar toolbar = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,35 +36,14 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 初始化toolbar
-     */
-    protected void initActionbar() {
-        toolbar = (Toolbar) findViewById(R.id.toolbar_actionbar);
-        if (toolbar == null) {
-            throw new IllegalStateException("Toolbar_actionbar toolbar has not be found in layout,be sure you have define toolbar in the layout");
-        } else {
-            setSupportActionBar(toolbar);
-            getSupportActionBar().setDisplayShowHomeEnabled(false);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            toolbar.setBackgroundResource(getActionBarBg());
-            toolbar.setNavigationIcon(R.mipmap.left_back);
-            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onBack(v);
-                }
-            });
-            toolbar.setTitleTextAppearance(this, R.style.TitleTextStyle);
-        }
+    @Override
+    public boolean hasToolbar() {
+        return true;
     }
 
-    public void onBack(View view) {
-        onBackPressed();
-    }
-
-    protected int getActionBarBg() {
-        return R.drawable.toolbar_bg;
+    @Override
+    protected boolean isTransStatusBar() {
+        return true;
     }
 
     /**

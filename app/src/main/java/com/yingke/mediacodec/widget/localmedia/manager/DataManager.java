@@ -43,7 +43,6 @@ public class DataManager {
         private static final DataManager INSTANCE  = new DataManager();
     }
 
-
     /**
      * 添加 媒体文件
      * @param selectedMedia
@@ -84,7 +83,27 @@ public class DataManager {
      */
     public void clear(){
         selectedMedias.clear();
+    }
 
+    /**
+     * 设置当前 显示的相册文件
+     * @param currentFolderMedias
+     */
+    public void setCurrentFolderMedias(List<LocalMediaResource> currentFolderMedias) {
+        if (currentFolderMedias != null) {
+            this.currentFolderMedias.addAll(currentFolderMedias);
+        }
+    }
+
+    /**
+     * 清空当前文件夹
+     */
+    public void clearCurrentFolderMedia(){
+        this.currentFolderMedias.clear();
+    }
+
+    public List<LocalMediaResource> getCurrentFolderMedias() {
+        return currentFolderMedias;
     }
 
     /**

@@ -17,6 +17,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
+import com.yingke.mediacodec.BaseActivity;
 import com.yingke.mediacodec.utils.FileUtils;
 import com.yingke.mediacodec.R;
 import com.yingke.mediacodec.transcode.MediaCodecTransCodeManager;
@@ -33,7 +34,7 @@ import java.util.Locale;
 /***
  * MediaCodec 转码
  * */
-public class MediaCodecTransCodeActivity extends AppCompatActivity {
+public class MediaCodecTransCodeActivity extends BaseActivity {
     private static final int REQUEST_FOR_VIDEO_FILE = 1000;
 
 
@@ -66,6 +67,16 @@ public class MediaCodecTransCodeActivity extends AppCompatActivity {
         }
         if (reqarray.length > 0)
             ActivityCompat.requestPermissions(this, reqarray, 100);
+    }
+
+    @Override
+    public boolean hasToolbar() {
+        return true;
+    }
+
+    @Override
+    protected boolean isTransStatusBar() {
+        return true;
     }
 
     @Override
