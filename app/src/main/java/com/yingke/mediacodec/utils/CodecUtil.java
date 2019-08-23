@@ -78,7 +78,7 @@ public class CodecUtil {
     /**
      * @param mediaFormat
      */
-    private static void outputMediaFormat(MediaFormat mediaFormat) {
+    public static void outputMediaFormat(MediaFormat mediaFormat) {
         Class clazz = MediaFormat.class;
         try {
             Method getMap = clazz.getDeclaredMethod("getMap");

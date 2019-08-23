@@ -57,13 +57,17 @@ public class CodecInputSurface implements SurfaceTexture.OnFrameAvailableListene
     }
 
     /**
-     * 创建opengl 渲染器，主要是 绘值 纹理id到 编码器的输入Surface
+     * 1，编码器 的输出Surface 创建opengl 渲染器，主要是 绘值 纹理id到 编码器的输入Surface
+     * 2，创建 解码器 的输入Surface
      */
     public void createRender() {
         PlayerLog.e(MediaCodecTransCoder.TAG, "----------createRender--------");
 
+        // 编码器 的输出Surface 需要的 渲染器
         mTextureRender = new TextureRenderer();
         mTextureRender.surfaceCreated();
+
+        // 解码器 的输入Surface 需要
         mSurfaceTexture = new SurfaceTexture(mTextureRender.getTextureId());
         mSurfaceTexture.setOnFrameAvailableListener(this);
         // 承载图像流的Surface，作为解码器的输出，解码器输出绘制在此Surface

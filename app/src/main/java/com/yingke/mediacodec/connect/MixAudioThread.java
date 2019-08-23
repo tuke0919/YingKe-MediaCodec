@@ -4,12 +4,15 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 
+import com.yingke.mediacodec.player.PlayerLog;
 import com.yingke.mediacodec.utils.CodecUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.yingke.mediacodec.compose.AudioCodec.TAG;
 
 /**
  * 功能：拼接 多个音频文件
@@ -23,6 +26,8 @@ import java.util.List;
  * <p>
  */
 public class MixAudioThread extends Thread {
+
+    public static final String TAG = "MixAudioThread";
 
     private static final int TIMEOUT_USEC = 0;
 
@@ -59,6 +64,8 @@ public class MixAudioThread extends Thread {
      * 为每个video创建 分离器和音频轨道
      */
     public void prepare() throws IOException {
+        PlayerLog.e(TAG, "---prepare --- ");
+
         for (int i = 0; i < mInputVideos.size(); i++) {
             // 创建分离器
             MediaExtractor extractor = CodecUtil.createExtractor(mInputVideos.get(i).getPath());
@@ -82,6 +89,9 @@ public class MixAudioThread extends Thread {
      * stereo和mono）
      */
     private void simpleAudioMix() {
+
+        PlayerLog.e(TAG, "---simpleAudioMix --- ");
+
         MediaExtractor firstExtractor = mFormatExtrators.get(0).getMediaExtractor();
         int firstTrackIndex = mFormatExtrators.get(0).getTrackIndex();
         // 音频输出格式
@@ -89,7 +99,6 @@ public class MixAudioThread extends Thread {
 
         // 将第一个视频的audioFormat作为整体音频的audioFormat
         mMediaMuxer.addTrackFormat(OnMuxerListener.MediaType.MEDIA_TYPE_AUDIO, mAudioOutputFormat);
-
 
 
         ByteBuffer buffer = ByteBuffer.allocate(50 * 1024);
@@ -108,7 +117,11 @@ public class MixAudioThread extends Thread {
         if (firstTrackIndex != -1) {
             while (true) {
                 int readSampleData = currentExtractor.readSampleData(buffer, 0);
+                PlayerLog.e(TAG, "---readSampleData --- readSampleData = " + readSampleData);
+
                 if (readSampleData < 0) {
+                    PlayerLog.e(TAG, "---当前音频采样完毕，更换分离器--- ：start ---" );
+
                     // 说明 本地读取完毕了
                     currentIndex ++;
 
@@ -123,6 +136,8 @@ public class MixAudioThread extends Thread {
                         break;
                     }
 
+                    PlayerLog.e(TAG, "---当前音频采样完毕，更换分离器--- ：end ---" );
+
                 } else {
 
                     MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
@@ -131,6 +146,9 @@ public class MixAudioThread extends Thread {
                     bufferInfo.flags = MediaCodec.BUFFER_FLAG_SYNC_FRAME;
 
                     if (isNextAudio) {
+
+                        PlayerLog.e(TAG, "---读下一段音频，时间戳 + 23219 ---");
+
                         // 是新的一段音频
                         bufferInfo.presentationTimeUs = lastSampleTime + 23219;
                         isNextAudio = false;
@@ -146,16 +164,20 @@ public class MixAudioThread extends Thread {
                     }
                     // 最后一帧显示时间
                     lastSampleTime = bufferInfo.presentationTimeUs;
+                    PlayerLog.e(TAG, "---保存当前Buffer采样，时间戳 --- lastSampleTime = " + lastSampleTime);
+
                     // 当不是第一段音频时 lastSampleTime1 != lastSampleTime;
                     lastSampleTime1 = currentExtractor.getSampleTime();
+                    PlayerLog.e(TAG, "---当前音频内采样，时间戳 --- lastSampleTime1 = " + lastSampleTime1);
 
+                    PlayerLog.e(TAG, "---混合气 写音频数据---");
                     // 向混合器写数据
                     mMediaMuxer.writeSampleData(OnMuxerListener.MediaType.MEDIA_TYPE_AUDIO, buffer, bufferInfo);
                     // 指向下一帧
                     currentExtractor.advance();
+                    PlayerLog.e(TAG, "---指向下一帧 音频 ---");
                 }
             }
-
             currentExtractor.release();
             mMediaMuxer.writeAudioEnd();
         }

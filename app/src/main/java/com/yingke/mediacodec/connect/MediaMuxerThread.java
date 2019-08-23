@@ -71,6 +71,10 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
     public void run() {
         super.run();
 
+        if (mListener != null) {
+            mListener.onStart();
+        }
+
         initMuxer();
         mAudioThread = new MixAudioThread(mInputVideos, this);
         mVideoThread = new MixVideoThread(mInputVideos, this);
@@ -107,25 +111,33 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
 
     @Override
     public void addTrackFormat(int mediaType, MediaFormat mediaFormat) {
+        PlayerLog.e(TAG, "---addTrackFormat---");
         synchronized (lock) {
             if (mMediaMuxer == null) {
                 return;
             }
             switch (mediaType) {
                 case MediaType.MEDIA_TYPE_AUDIO:
+                    PlayerLog.e(TAG, "---addTrackFormat 音频---");
+
                     mMuxerAudioTrack = mMediaMuxer.addTrack(mediaFormat);
                     mIsAudioAdded = true;
                     break;
 
                 case MediaType.MEDIA_TYPE_VIDEO:
+                    PlayerLog.e(TAG, "---addTrackFormat 视频---");
+
                     mMuxerVideoTrack = mMediaMuxer.addTrack(mediaFormat);
                     mIsVideoAdded = true;
                     break;
             }
             if (mIsAudioAdded && mIsVideoAdded) {
+                PlayerLog.e(TAG, "---addTrackFormat 视频--- mIsAudioAdded = " + mIsAudioAdded + " mIsVideoAdded = " + mIsVideoAdded );
+
                 mMediaMuxer.start();
                 mIsMuxerStarted = true;
                 lock.notify();
+
                 PlayerLog.e(TAG, " addTrackFormat start media muxer waiting for data...");
             }
 
@@ -134,6 +146,8 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
 
     @Override
     public void writeSampleData(int mediaType, ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
+        PlayerLog.e(TAG, "---writeSampleData--- mIsMuxerStarted = " + mIsMuxerStarted);
+
         // 等待 混合器 开始
         if (!mIsMuxerStarted) {
             synchronized (lock) {
@@ -149,10 +163,12 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
 
         switch (mediaType) {
             case MediaType.MEDIA_TYPE_AUDIO:
+                PlayerLog.e(TAG, "---writeSampleData 音频---");
                 mMediaMuxer.writeSampleData(mMuxerAudioTrack, buffer, bufferInfo);
                 break;
 
             case MediaType.MEDIA_TYPE_VIDEO:
+                PlayerLog.e(TAG, "---writeSampleData 视频---");
                 mMediaMuxer.writeSampleData(mMuxerVideoTrack, buffer, bufferInfo);
                 break;
         }
@@ -160,12 +176,14 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
 
     @Override
     public void writeAudioEnd() {
+        PlayerLog.e(TAG, "---writeAudioEnd---");
         mIsAudioEnd = true;
         finish();
     }
 
     @Override
     public void writeVideoEnd() {
+        PlayerLog.e(TAG, "---writeVideoEnd---");
         mIsVideoEnd = true;
         finish();
     }
@@ -175,9 +193,14 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
      * 视频和音频写入完成
      */
     public void finish(){
+        PlayerLog.e(TAG, "---writeVideoEnd--- mIsAudioEnd = " + mIsAudioEnd + " mIsVideoEnd = " + mIsVideoEnd);
+
         synchronized (lock){
             if(mIsAudioEnd && mIsVideoEnd){
                 stopMediaMuxer();
+                if (mListener != null) {
+                    mListener.onFinish();
+                }
             }
         }
     }
@@ -185,6 +208,8 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
      * 停止MediaMuxer
      */
     private void stopMediaMuxer() {
+        PlayerLog.e(TAG, "---stopMediaMuxer---");
+
         if (mMediaMuxer != null) {
             mMediaMuxer.stop();
             mMediaMuxer.release();
@@ -192,6 +217,16 @@ public class MediaMuxerThread extends Thread implements OnMuxerListener {
             mIsVideoEnd = false;
             mMediaMuxer = null;
         }
+    }
 
+    public ProcessListener mListener;
+
+    public void setListener(ProcessListener listener) {
+        mListener = listener;
+    }
+
+    public interface ProcessListener {
+        void onStart();
+        void onFinish();
     }
 }

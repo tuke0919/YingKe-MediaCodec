@@ -310,18 +310,18 @@ public class LocalMediaLoader {
     /**
      * 获取视频(最长或最小时间)
      * TODO 有误
-     * @param exMaxLimit
-     * @param exMinLimit
+     * @param exMaxLimit ms
+     * @param exMinLimit ms
      * @return
      */
     private String getDurationCondition(long exMaxLimit, long exMinLimit) {
-        long maxS = LocalMediaConfig.getInstance().getVideoMaxSecond() == 0 ? Long.MAX_VALUE : LocalMediaConfig.getInstance().getVideoMaxSecond();
+        long maxS = LocalMediaConfig.getInstance().getVideoMaxSecond() * 1000 == 0 ? Long.MAX_VALUE : LocalMediaConfig.getInstance().getVideoMaxSecond() * 1000;
         if (exMaxLimit != 0) {
             maxS = Math.min(maxS, exMaxLimit);
         }
-        return String.format(Locale.CHINA, "%d <%s duration and duration <= %d",
-                Math.max(exMinLimit,  LocalMediaConfig.getInstance().getVideoMinSecond()),
-                Math.max(exMinLimit,  LocalMediaConfig.getInstance().getVideoMinSecond()) == 0 ? "" : "=",
+        return String.format(Locale.CHINA, " duration >%s %d and duration <= %d",
+                Math.max(exMinLimit,  LocalMediaConfig.getInstance().getVideoMinSecond() * 1000) == 0 ? "" : "=",
+                Math.max(exMinLimit,  LocalMediaConfig.getInstance().getVideoMinSecond() * 1000),
                 maxS);
     }
 

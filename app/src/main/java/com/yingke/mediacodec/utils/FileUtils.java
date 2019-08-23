@@ -24,6 +24,7 @@ public class FileUtils {
     private static String DIR_NAME_RECORD = "MediaCodecRecorder";
     private static String DIR_NAME_TRANCODE = "MediaCodecTranCoder";
     private static String DIR_NAME_COMPOSE_AUDIO = "MediaCodecAudio";
+    private static String DIR_NAME_COMPOSE_VIDEO = "MediaCodecVideo";
 
     private static String DIR_NAME_PCM = "pcm";
 
@@ -49,6 +50,27 @@ public class FileUtils {
         }
         return null;
     }
+
+    /**
+     * 多视频拼接 获取输出文件路径
+     *
+     * @param fileNamePrefix  文件名前缀
+     * @param suffix .mp4 - video，.m4a - audio
+     * @return 没有写权限 返回null
+     */
+    public static final File getMergeOutputFile(String fileNamePrefix, final String suffix) {
+        final File dir = new File(Environment.getExternalStorageDirectory(), DIR_NAME + "/" + DIR_NAME_COMPOSE_VIDEO);
+        if (!dir.getParentFile().exists()) {
+            dir.getParentFile().mkdir();
+        }
+        dir.mkdirs();
+        if (dir.canWrite()) {
+            return new File(dir, fileNamePrefix + "-" + getDateTimeString() + suffix);
+        }
+        return null;
+    }
+
+
 
     /**
      * 获取当前时间的格式化形式

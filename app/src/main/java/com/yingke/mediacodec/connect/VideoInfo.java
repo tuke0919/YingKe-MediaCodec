@@ -21,14 +21,19 @@ public class VideoInfo {
     public int width;
     // 高
     public int height;
-    // 比特率
-    public int bitRate;
-    // 帧率
-    public int frameRate;
-    // 关键帧间隔
-    public int frameInterval;
     // 时长
     public int duration;
+
+    // 比特率
+    @Deprecated
+    public int bitRate;
+    // 帧率
+    @Deprecated
+    public int frameRate;
+    // 关键帧间隔
+    @Deprecated
+    public int frameInterval;
+
 
     public String getPath() {
         return path;

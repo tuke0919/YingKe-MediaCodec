@@ -23,10 +23,10 @@ import java.util.List;
  * 最后修改人：无
  * <p>
  */
-public class DataManager {
+public class LocalMediaDataManager {
 
     private static final int MAX_IMAGE = 9;
-    private static final int MAX_VIDEO = 2;
+    private static final int MAX_VIDEO = 5;
     private static final int MAX_AUDIO = 2;
 
 
@@ -35,12 +35,12 @@ public class DataManager {
     // 当前相册媒体结合
     private List<LocalMediaResource> currentFolderMedias = new ArrayList<>();
 
-    public static DataManager getInstance(){
+    public static LocalMediaDataManager getInstance(){
         return DataManagerHolder.INSTANCE;
     }
 
     private static class DataManagerHolder{
-        private static final DataManager INSTANCE  = new DataManager();
+        private static final LocalMediaDataManager INSTANCE  = new LocalMediaDataManager();
     }
 
     /**
@@ -81,7 +81,10 @@ public class DataManager {
     /**
      * 清空
      */
-    public void clear(){
+    public void clearSelectedMedias(){
+        for(LocalMediaResource resource: selectedMedias) {
+            resource.setChecked(false);
+        }
         selectedMedias.clear();
     }
 

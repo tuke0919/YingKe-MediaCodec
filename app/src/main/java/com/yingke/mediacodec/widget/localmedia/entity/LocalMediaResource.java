@@ -30,8 +30,17 @@ public class LocalMediaResource implements Parcelable {
      */
     private String mimeType;
 
-    // 媒体路径
+    // 媒体路径， image类型 就是图片，video类型 是缩略图
     private String mediaPath;
+
+    // 宽
+    private int width;
+    // 高
+    private int height;
+
+    // 时长 - 音视频
+    private long duration;
+
 
     // 列表位置
     public int positionInRecyclerView;
@@ -41,10 +50,6 @@ public class LocalMediaResource implements Parcelable {
     // 第几个选中
     private int selectedNumber;
 
-    // 宽
-    private int width;
-    // 高
-    private int height;
     // 被压缩
     private boolean isCompressed;
     // 压缩路径
@@ -54,8 +59,7 @@ public class LocalMediaResource implements Parcelable {
     // 裁剪路径
     private String cropPath;
 
-    // 时长 - 音视频
-    private long duration;
+
 
 
     public MediaConfig.MediaType getMediaType() {

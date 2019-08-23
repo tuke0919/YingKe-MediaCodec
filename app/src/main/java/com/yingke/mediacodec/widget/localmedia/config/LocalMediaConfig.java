@@ -70,15 +70,25 @@ public class LocalMediaConfig {
         return videoMaxSecond;
     }
 
-    public void setVideoMaxSecond(int videoMaxSecond) {
+    public LocalMediaConfig setVideoMaxSecond(int videoMaxSecond) {
         this.videoMaxSecond = videoMaxSecond;
+        return this;
     }
 
     public int getVideoMinSecond() {
         return videoMinSecond;
     }
 
-    public void setVideoMinSecond(int videoMinSecond) {
+    public LocalMediaConfig setVideoMinSecond(int videoMinSecond) {
         this.videoMinSecond = videoMinSecond;
+        return this;
+    }
+
+    public void reset() {
+        mediaType = MediaConfig.MediaType.MEDIA_TYPE_ALL;
+        selectionMode = MediaConfig.SelectionMode.MULTI_SELECTION;
+        videoMaxSecond = 0;
+        videoMinSecond = 0;
+        isShowGif = true;
     }
 }

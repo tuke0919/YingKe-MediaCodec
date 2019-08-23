@@ -4,6 +4,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
@@ -16,13 +17,14 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.yingke.mediacodec.R;
+import com.yingke.mediacodec.utils.DateUtils;
 import com.yingke.mediacodec.utils.ToastUtil;
 import com.yingke.mediacodec.widget.localmedia.anim.OptAnimationLoader;
 import com.yingke.mediacodec.widget.localmedia.config.LocalMediaConfig;
 import com.yingke.mediacodec.widget.localmedia.config.MediaConfig;
 import com.yingke.mediacodec.widget.localmedia.config.MediaMimeType;
 import com.yingke.mediacodec.widget.localmedia.entity.LocalMediaResource;
-import com.yingke.mediacodec.widget.localmedia.manager.DataManager;
+import com.yingke.mediacodec.widget.localmedia.manager.LocalMediaDataManager;
 
 
 import java.io.File;
@@ -167,6 +169,7 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
         // check
         public LinearLayout checkLayout;
         public TextView checkTv;
+        public TextView duration;
 
         public LocalMediaResource data;
         public int positionInRecycleView;
@@ -176,6 +179,7 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
             imageView = (ImageView) findViewById(R.id.selector_item_picture);
             checkLayout = (LinearLayout) findViewById(R.id.selector_item_check_layout);
             checkTv = (TextView) findViewById(R.id.selector_item_check);
+            duration = (TextView) findViewById(R.id.selector_item_duration);
         }
 
         @Override
@@ -197,6 +201,11 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
                 // 音频
                 imageView.setImageResource(R.drawable.item_audio_placeholder);
 
+                duration.setVisibility(View.VISIBLE);
+                Drawable drawable = ContextCompat.getDrawable(context, R.mipmap.icon_duration_audio);
+                this.duration.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+                this.duration.setText(DateUtils.parseTime(data.getDuration()));
+
             } else if (mediaType == MediaMimeType.ofVideo()){
                 // 视频
                 RequestOptions options = new RequestOptions()
@@ -209,6 +218,11 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
                         .apply(options)
                         .into(imageView);
 
+                duration.setVisibility(View.VISIBLE);
+                Drawable drawable = ContextCompat.getDrawable(context, R.mipmap.icon_duration_video);
+                this.duration.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+                this.duration.setText(DateUtils.parseTime(data.getDuration()));
+
             } else {
                 // 纯图片
                 RequestOptions options = new RequestOptions()
@@ -220,6 +234,7 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
                         .load(path)
                         .apply(options)
                         .into(imageView);
+                duration.setVisibility(View.GONE);
 
             }
             // 选择
@@ -288,9 +303,9 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
         }
 
         // 重新编号
-        int size = DataManager.getInstance().selectedSize();
+        int size = LocalMediaDataManager.getInstance().selectedSize();
         for (int index = 0, length = size; index < length; index++) {
-            LocalMediaResource mediaResource = DataManager.getInstance().getSelectedMedias().get(index);
+            LocalMediaResource mediaResource = LocalMediaDataManager.getInstance().getSelectedMedias().get(index);
             mediaResource.setSelectedNumber(index + 1);
         }
     }
@@ -307,10 +322,10 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
         if (isChecked) {
             // 已选中 -> 取消选中
             boolean removeSuccess = false;
-            for (LocalMediaResource media : DataManager.getInstance().getSelectedMedias()) {
+            for (LocalMediaResource media : LocalMediaDataManager.getInstance().getSelectedMedias()) {
                 if (media.getMediaPath().equals(localMediaResource.getMediaPath())) {
                     // 移除
-                    removeSuccess = DataManager.getInstance().removeSelectedMedia(localMediaResource);
+                    removeSuccess = LocalMediaDataManager.getInstance().removeSelectedMedia(localMediaResource);
                     break;
                 }
             }
@@ -328,9 +343,9 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
         } else {
             // 未选中 -> 选中
 
-            boolean success = DataManager.getInstance().addSelectedMedia(context, localMediaResource);
+            boolean success = LocalMediaDataManager.getInstance().addSelectedMedia(context, localMediaResource);
             if (success) {
-                int size = DataManager.getInstance().selectedSize();
+                int size = LocalMediaDataManager.getInstance().selectedSize();
                 localMediaResource.setChecked(true);
                 localMediaResource.setSelectedNumber(size);
 
@@ -344,7 +359,7 @@ public class BaseLocalMediaAdapter extends BaseRecycleViewAdapter<LocalMediaReso
         }
 
         if (mLocalMediaListener != null) {
-            mLocalMediaListener.onSelectMediaChanged(DataManager.getInstance().getSelectedMedias());
+            mLocalMediaListener.onSelectMediaChanged(LocalMediaDataManager.getInstance().getSelectedMedias());
         }
     }
 

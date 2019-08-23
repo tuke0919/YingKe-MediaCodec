@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.yinge.picture.selector.views.SquareRelativeLayout
+<com.yingke.mediacodec.widget.localmedia.views.SquareRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -31,4 +31,21 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-</com.yinge.picture.selector.views.SquareRelativeLayout>
+    <!--时长-->
+    <TextView
+        android:id="@+id/selector_item_duration"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_alignParentBottom="true"
+        android:background="@mipmap/bg_duration"
+        android:drawableLeft="@mipmap/icon_duration_video"
+        android:drawablePadding="15dp"
+        android:gravity="center_vertical"
+        android:paddingLeft="5dp"
+        android:paddingTop="8dp"
+        android:text="00:00"
+        android:textColor="@color/white"
+        android:textSize="13sp"
+        android:visibility="visible" />
+
+</com.yingke.mediacodec.widget.localmedia.views.SquareRelativeLayout>

@@ -5,6 +5,7 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import com.yingke.mediacodec.player.PlayerLog;
 import com.yingke.mediacodec.transcode.opengl.CodecInputSurface;
 import com.yingke.mediacodec.utils.CodecUtil;
 
@@ -13,7 +14,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yingke.mediacodec.compose.AudioCodec.TAG;
+import static android.media.MediaFormat.KEY_HEIGHT;
+import static android.media.MediaFormat.KEY_WIDTH;
+
 
 /**
  * 功能：
@@ -27,9 +30,15 @@ import static com.yingke.mediacodec.compose.AudioCodec.TAG;
  * <p>
  */
 public class MixVideoThread extends Thread {
+    public static final String TAG = "MixVideoThread";
 
     private static final String MIME_TYPE = "video/avc";
-    private static final int TIMEOUT_USEC = 0;
+    private static final int TIMEOUT_USEC = 10;
+
+    private static final int OUTPUT_BITRATE = 3000000;
+    private static final int OUTPUT_FRAME_RATE = 25;
+    private static final int OUTPUT_KEY_FRAME_INTERVAL = 10;
+    private static final float BPP = 0.25f;
 
     // 混合器监听
     private OnMuxerListener mMediaMuxer;
@@ -39,6 +48,7 @@ public class MixVideoThread extends Thread {
     private List<DecoderFormatExtractor> mDecoderFormatExtrators;
 
     // 最终输出格式
+    // 宽高已第一个视频为准，宽高不一致会有视频会被拉伸/压缩，原因在CodecInputSurface.drawImage opengGl着色器没有设置合适的矩阵，后期优化吧
     private MediaFormat mVideoOutputFormat;
     // 编码器，只有一个编码器
     private MediaCodec mFinalEncoder;
@@ -61,7 +71,7 @@ public class MixVideoThread extends Thread {
     public void run() {
         try {
             prepare();
-//            editVideo(videoOutputFormat);
+            connectMultiVideo();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -95,15 +105,21 @@ public class MixVideoThread extends Thread {
 
         // 根据第一个视频信息来确定编码信息
         VideoInfo firstVideo = mInputVideos.get(0);
-        if (firstVideo.getDuration() == 0 || firstVideo.getDuration() == 180) {
+
+        if (firstVideo.getRotation() == 0 || firstVideo.getRotation() == 180) {
             mVideoOutputFormat = MediaFormat.createVideoFormat(MIME_TYPE, firstVideo.getWidth(), firstVideo.getHeight());
         } else {
             mVideoOutputFormat = MediaFormat.createVideoFormat(MIME_TYPE, firstVideo.getHeight(),firstVideo.getWidth());
         }
         mVideoOutputFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        mVideoOutputFormat.setInteger(MediaFormat.KEY_BIT_RATE, firstVideo.getBitRate());
-        mVideoOutputFormat.setInteger(MediaFormat.KEY_FRAME_RATE, firstVideo.getFrameRate());
-        mVideoOutputFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, firstVideo.getFrameInterval());
+        mVideoOutputFormat.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate(firstVideo.getWidth(), firstVideo.getHeight()));
+        mVideoOutputFormat.setInteger(MediaFormat.KEY_FRAME_RATE, OUTPUT_FRAME_RATE);
+        mVideoOutputFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, OUTPUT_KEY_FRAME_INTERVAL);
+        mVideoOutputFormat.setInteger(MediaFormat.KEY_DURATION, firstVideo.getDuration());
+
+        PlayerLog.e("VideoConnectFragment", "mVideoOutputFormat : "
+                + " width = " + mVideoOutputFormat.getInteger(KEY_WIDTH)
+                + " height = " + mVideoOutputFormat.getInteger(KEY_HEIGHT) );
 
 
         // 初始化 编码器，只有一个编码器
@@ -113,6 +129,19 @@ public class MixVideoThread extends Thread {
         mCodecInputSurface.makeCurrent();
         mFinalEncoder.start();
     }
+
+    /**
+     * 计算 码率
+     * @return
+     */
+    private int calcBitRate(int width, int height) {
+        final int bitrate = (int) (BPP * OUTPUT_FRAME_RATE * width * height);
+//        final int bitrate = 800000;
+        Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
+        return bitrate;
+    }
+
+
 
     // 是否整体编解码完毕
     private boolean totalOutputDone = false;
@@ -145,9 +174,11 @@ public class MixVideoThread extends Thread {
     private int currentVideoIndex = 0;
 
     // 解码器 输入Buffers
-    ByteBuffer[] decoderInputBuffers = currentDecoder.getInputBuffers();
+    ByteBuffer[] decoderInputBuffers;
     // 编码器 输出Buffers
-    ByteBuffer[] encoderOutputBuffers = mFinalEncoder.getOutputBuffers();
+    ByteBuffer[] encoderOutputBuffers;
+
+
     /**
      * 连接多个 视频
      * 读取多个数据 -》解码 -》编码
@@ -156,11 +187,17 @@ public class MixVideoThread extends Thread {
 
         // 当前解码器
         currentDecoder = mDecoderFormatExtrators.get(0).getDecoder();
+        // 创建 解码器输入Surface
+        mCodecInputSurface.createRender();
         currentDecoder.configure(mDecoderFormatExtrators.get(0).getMediaFormat(), mCodecInputSurface.getSurface(), null, 0);
         currentDecoder.start();
+
+
         // 当前分离器
         currentExtractor = mDecoderFormatExtrators.get(0).getMediaExtractor();
 
+        decoderInputBuffers = currentDecoder.getInputBuffers();
+        encoderOutputBuffers = mFinalEncoder.getOutputBuffers();
 
         // 解码器 输出bufferInfo
         MediaCodec.BufferInfo decoderOutputInfo = new MediaCodec.BufferInfo();
@@ -173,6 +210,8 @@ public class MixVideoThread extends Thread {
                 // 每次读取一帧数据
                 readOneFrameData(currentDecoder, currentExtractor, decoderInputBuffers);
             }
+            decoderOutputDone = false;
+            encoderOutputDone = false;
             while (!decoderOutputDone || !encoderOutputDone){
                 // 解码器 解码输出
                 decodeVideoData(decoderOutputInfo);
@@ -198,7 +237,11 @@ public class MixVideoThread extends Thread {
      * @param decoderInputBuffers 解码器 输入buffer
      */
     public void readOneFrameData(MediaCodec currentDecoder, MediaExtractor currentExtractor, ByteBuffer[] decoderInputBuffers) {
+        PlayerLog.e(TAG, "---readOneFrameData---");
+
         int inputIndex = currentDecoder.dequeueInputBuffer(TIMEOUT_USEC);
+        PlayerLog.e(TAG, "---currentDecoder 输入buffer index--- inputIndex =  " + inputIndex);
+
         if (inputIndex >= 0){
             // 说明解码器有可用buffer
             ByteBuffer inputBuffer = decoderInputBuffers[inputIndex];
@@ -210,7 +253,7 @@ public class MixVideoThread extends Thread {
                 /**
                  * 说明当前视频文件 该分离器中 没有数据了 发送一个解码流结束的标志位
                  * */
-                Log.e("send", "-----发送end--flag");
+                PlayerLog.e(TAG, "-----当前视频 读数据结束 发送end--flag");
                 currentVideoInputDone = true;
                 currentDecoder.queueInputBuffer(inputIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
             } else {
@@ -220,6 +263,7 @@ public class MixVideoThread extends Thread {
                  * 那么 + 30000
                  */
                 if(isReadNextVideo) {
+                    PlayerLog.e(TAG, "----读下一段视频，时间戳加30000----");
                     isReadNextVideo = false;
                     decoderInputTimeStamp += 30000;
                 } else {
@@ -232,10 +276,14 @@ public class MixVideoThread extends Thread {
                     }
                     // 当读 下一段视频时，这个值有用
                     lastDecoderInputTime = currentExtractor.getSampleTime();
+                    PlayerLog.e(TAG, "----当前采样帧 PTS ---- PTS = " + lastDecoderInputTime);
+                    PlayerLog.e(TAG, "----解码器输入帧 PTS ---- PTS = " + decoderInputTimeStamp);
+
                     // 向解码器 输入buffer
                     currentDecoder.queueInputBuffer(inputIndex, 0, readSampleData, decoderInputTimeStamp, 0);
                     // 分离器 指针指向下一帧
                     currentExtractor.advance();
+                    PlayerLog.e(TAG, "----指向下一帧----");
                 }
             }
         }
@@ -246,12 +294,14 @@ public class MixVideoThread extends Thread {
      * @param decoderOutputInfo  解码器输出 bufferInfo
      */
     public void decodeVideoData(MediaCodec.BufferInfo decoderOutputInfo ) {
+        PlayerLog.e(TAG, "---decodeVideoData---");
 
         /*说明解码器的输出output有数据*/
         int outputIndex = currentDecoder.dequeueOutputBuffer(decoderOutputInfo, TIMEOUT_USEC);
-        Log.e("videoo", "  解码器出来的index   " + outputIndex);
+        PlayerLog.e(TAG, "---currentDecoder 输出buffer index--- outputIndex =  " + outputIndex);
         switch (outputIndex) {
             case MediaCodec.INFO_TRY_AGAIN_LATER:
+                PlayerLog.e(TAG, "---currentDecoder 暂无数据输出 --- decoderOutputDone = " + decoderOutputDone);
                 // 没有可用解码器输出
                 decoderOutputDone = true;
                 break;
@@ -262,16 +312,23 @@ public class MixVideoThread extends Thread {
             default:
                 if (outputIndex >= 0) {
                     /*
-                     * 8、判断本次是否有数据 以及本次数据是否需要传入编码器
+                     * 判断本次是否有数据 以及本次数据是否需要传入编码器
                      * */
                     boolean doRender = (decoderOutputInfo.size != 0);
+                    if (doRender) {
+                        PlayerLog.e(TAG, "---currentDecoder 有数据输出 --- decoderOutputInfo.size = " + decoderOutputInfo.size);
+                    }
                     /*
-                     * 9、根据当前解码出来的数据的时间戳 判断 是否需要写入编码器
+                     * 根据当前解码出来的数据的时间戳 判断 是否需要写入编码器
                      * */
                     boolean isUseful = true;
                     if (decoderOutputInfo.presentationTimeUs <= 0) {
                         doRender = false;
                     }
+                    if (doRender) {
+                        PlayerLog.e(TAG, "---currentDecoder 有数据输出 渲染到输出Surface图像流 SurfaceTexture---" );
+                    }
+
                     // 渲染到 configure的输出Surface，使用SurfaceTexture类型的Surface承载图像流
                     currentDecoder.releaseOutputBuffer(outputIndex, doRender && isUseful);
 
@@ -280,12 +337,11 @@ public class MixVideoThread extends Thread {
                          * 是有效数据 让他写到编码器中
                          * 并且对时间戳 进行重写
                          * */
-                        Log.e("videoo", "---卡主了？ 一  " + decoderOutputInfo.size);
+                        PlayerLog.e(TAG, "---等待图像流 帧可用，线程等待 5s......--- ");
                         mCodecInputSurface.awaitNewImage();
-                        Log.e("videoo", "---卡住了  === 二");
+                        PlayerLog.e(TAG, "---帧已可用，OpenGl绘制图像流的纹理id 到解码器的输入Surface --- ");
                         mCodecInputSurface.drawImage();
-                        Log.e("videoo", "---卡住了  === 三！！！");
-
+                        PlayerLog.e(TAG, "---帧已可用，OpenGl绘制图像流的纹理id 到解码器的输入Surface --结束 --- ");
 
                         if (isFirstDecodeOutputFrame) {
                             /**
@@ -297,7 +353,7 @@ public class MixVideoThread extends Thread {
                              * 如果是更换了一个视频源 就+30000us
                              */
                             if (isDecoderOutputVideoChanged) {
-                                Log.e("videoo", "---更换了一个视频源=== + 30000");
+                                PlayerLog.e(TAG, "---解码器 更换了一个视频源=== + 30000--- ");
                                 isDecoderOutputVideoChanged = false;
                                 // 编码器的输入时间, 给编码器的时间
                                 encoderInputTimeStamp = (encoderInputTimeStamp + 30000);
@@ -305,23 +361,28 @@ public class MixVideoThread extends Thread {
                                 encoderInputTimeStamp = (encoderInputTimeStamp + (decoderOutputInfo.presentationTimeUs - lastEncoderInputTimeStamp));
                             }
                         }
+                        PlayerLog.e(TAG, "---在编码画面帧的时候，重置编码器输入时间戳 --- encoderInputTimeStamp = " + encoderInputTimeStamp);
 
-                        Log.e("videooo", "---在编码画面帧的时候，重置时间戳===" + encoderInputTimeStamp);
                         mCodecInputSurface.setPresentationTime(encoderInputTimeStamp * 1000);
+                        PlayerLog.e(TAG, "---swapBuffers--- " );
                         mCodecInputSurface.swapBuffers();
                     } else {
-                        Log.e("videoo", "---解码出来的视频有问题=== " + doRender + "   " + isUseful);
+                        PlayerLog.e(TAG, "---解码出来的视频有问题--- " + doRender + "   " + isUseful);
                     }
                     // 编码器 上一帧时间戳
                     lastEncoderInputTimeStamp = decoderOutputInfo.presentationTimeUs;
 
                     if ((decoderOutputInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                        PlayerLog.e(TAG, "---当前视频解码结束--- " );
                         /**
                          * 解码器解码完成了，说明该分离器的数据写入完成了 并且都已经解码完成了
                          * 更换分离器和解码器或者结束编解码
                          * */
                         currentVideoIndex ++;
                         if (currentVideoIndex < mDecoderFormatExtrators.size()) {
+
+                            PlayerLog.e(TAG, "---当前视频解码结束--- ：更换分离器，更换解码器 --- ：start----");
+
                             /**
                              * 说明还有需要解码的
                              * 1),更换分离器
@@ -347,14 +408,14 @@ public class MixVideoThread extends Thread {
                             currentVideoInputDone = false;
                             isDecoderOutputVideoChanged = true;
                             isReadNextVideo = true;
-                            Log.e("videoo", "---更换分离器 and 解码器---==");
+                            PlayerLog.e(TAG, "---当前视频解码结束--- ：更换分离器，更换解码器 --- ：end----");
                         } else {
                             /**
                              * 没有数据了 就给编码器发送一个结束的标志位
                              * */
                             mFinalEncoder.signalEndOfInputStream();
                             currentVideoInputDone = true;
-                            Log.e("videoo", "---所有视频都解码完成了 告诉编码器 可以结束了---==");
+                            PlayerLog.e(TAG, "---所有视频都解码完成了 告诉编码器 可以结束了 --- ");
                         }
                     }
                 }
@@ -368,11 +429,17 @@ public class MixVideoThread extends Thread {
      * @param encodeOutputInfo
      */
     public void encodeVideoDataToMuxer(MediaCodec.BufferInfo encodeOutputInfo) {
+        PlayerLog.e(TAG, "---encodeVideoDataToMuxer---");
+
         int encodeOutputState = mFinalEncoder.dequeueOutputBuffer(encodeOutputInfo, TIMEOUT_USEC);
+        PlayerLog.e(TAG, "---mFinalEncoder 输出buffer index--- encodeOutputState =  " + encodeOutputState);
+
         switch (encodeOutputState) {
             case MediaCodec.INFO_TRY_AGAIN_LATER:
                 // 说明没有可用的编码器
                 encoderOutputDone = true;
+                PlayerLog.e(TAG, "---mFinalEncoder 暂无数据输出 --- encoderOutputDone = " + encoderOutputDone);
+
                 break;
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                 encoderOutputBuffers = mFinalEncoder.getOutputBuffers();
@@ -382,7 +449,8 @@ public class MixVideoThread extends Thread {
                 MediaFormat newFormat = mFinalEncoder.getOutputFormat();
                 // 混合器添加输出格式
                 mMediaMuxer.addTrackFormat(OnMuxerListener.MediaType.MEDIA_TYPE_VIDEO, newFormat);
-                Log.e("videoo", "---添加MediaFormat");
+                PlayerLog.e(TAG, "---mFinalEncoder 添加MediaFormat --- ");
+
                 break;
             default:
                 if (encodeOutputState >= 0) {
@@ -397,9 +465,14 @@ public class MixVideoThread extends Thread {
                     // 获取 编码器输出Buffer
                     ByteBuffer encoderOutputBuffer = encoderOutputBuffers[encodeOutputState];
                     if (encodeOutputInfo.size > 0) {
-                        Log.e("videoo", "--写入混合器的数据----presentationTime===" + encodeOutputInfo.presentationTimeUs + "===size===" + encodeOutputInfo.size + "----flags==" + encodeOutputInfo.flags);
+                        PlayerLog.e(TAG, "---mFinalEncoder 写入混合器的数据 --- "
+                                + " presentationTime = " + encodeOutputInfo.presentationTimeUs
+                                + " size = " + encodeOutputInfo.size
+                                + " flags= " + encodeOutputInfo.flags);
                         mMediaMuxer.writeSampleData(OnMuxerListener.MediaType.MEDIA_TYPE_VIDEO, encoderOutputBuffer, encodeOutputInfo);
                     }
+                    PlayerLog.e(TAG, "---释放buffer 给编码器 --- ");
+
                     // 释放Buffer 给编码器
                     mFinalEncoder.releaseOutputBuffer(encodeOutputState, false);
                 }

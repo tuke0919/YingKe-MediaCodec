@@ -73,6 +73,10 @@ public class MediaMuxerManager {
 
     }
 
+    public String getOutputPath() {
+        return mOutputPath;
+    }
+
     /**
      * 准备，主要是初始化编码器
      *

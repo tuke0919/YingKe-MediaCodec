@@ -1,12 +1,16 @@
 package com.yingke.mediacodec.recorder;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.yingke.mediacodec.R;
 import com.yingke.mediacodec.player.PlayerLog;
@@ -16,6 +20,7 @@ import com.yingke.mediacodec.recorder.encoder.MediaMuxerManager;
 import com.yingke.mediacodec.recorder.encoder.MediaVideoEncoder;
 import com.yingke.mediacodec.recorder.glsurface.MediaCodecRecordGlSurfaceView;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -40,6 +45,8 @@ public class RecorderFragment extends Fragment {
 
     private MediaMuxerManager mMediaMuxerManager;
 
+    private String outputPath = "";
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -62,7 +69,7 @@ public class RecorderFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 PlayerLog.e(TAG, "StartRecordBtn click");
-
+                outputPath = "";
                 startRecording();
                 mStartRecordBtn.setVisibility(View.GONE);
                 mStopRecordBtn.setVisibility(View.VISIBLE);
@@ -73,10 +80,16 @@ public class RecorderFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 PlayerLog.e(TAG, "StopRecordBtn click");
+                // 刷新相册数据库
+                outputPath = mMediaMuxerManager.getOutputPath();
+                if (!TextUtils.isEmpty(outputPath)) {
+                    getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(outputPath))));
 
+                }
                 stopRecording();
                 mStopRecordBtn.setVisibility(View.GONE);
                 mStartRecordBtn.setVisibility(View.VISIBLE);
+
             }
         });
     }
@@ -127,6 +140,15 @@ public class RecorderFragment extends Fragment {
         }
     }
 
+    /**
+     * @return 录制输出路径
+     */
+    public String getOutputPath() {
+        return outputPath;
+    }
+
+
+
 
     @Override
     public void onPause() {
@@ -162,9 +184,6 @@ public class RecorderFragment extends Fragment {
             }
         }
     };
-
-
-
 
     @Override
     public void onDestroy() {
