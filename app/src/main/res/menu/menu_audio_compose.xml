@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+    <item
+        android:id="@+id/action_multi_aac"
+        android:title="多音频实现混音"
+        >
+    </item>
+
+    <item
+        android:id="@+id/action_saperate"
+        android:title="视频分离音频"
+        >
+    </item>
+
+    <item
+        android:id="@+id/action_pcm_aac"
+        android:title="PCM合成音频"
+        >
+    </item>
+
+
+
+</menu>

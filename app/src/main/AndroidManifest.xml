@@ -58,6 +58,10 @@
             android:name=".connect.ui.MediaCodecVideoConnectActivity"
             android:label="MediaCodec多视频拼接"/>
 
+        <activity
+            android:name=".compose.ui.MediaCodecAudioComposeActivity"
+            android:label="MediaCodec多音频混音"/>
+
     </application>
 
 </manifest>

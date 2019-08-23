@@ -47,7 +47,7 @@ public class AudioCodec {
 
     /**
      * 从视频文件中分离出音频，并保存到本地
-     *
+     * video -> aac
      * @param videoPath
      * @param audioSavePath
      * @param listener
@@ -147,7 +147,7 @@ public class AudioCodec {
     }
 
     /**
-     * 音频文件 解码成pcm
+     * 音频文件 解码成pcm mp3->pcm
      *
      * @param audioPath
      * @param pcmSavePath
@@ -236,11 +236,11 @@ public class AudioCodec {
                             break;
                         case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                             // 只调用一次
-                            MediaFormat newFormat = audioDecoder.getOutputFormat();
-                            int muxerAudioTrack = mediaMuxer.addTrack(newFormat);
-                            if (muxerAudioTrack > -1) {
-                                mediaMuxer.start();
-                            }
+//                            MediaFormat newFormat = audioDecoder.getOutputFormat();
+//                            int muxerAudioTrack = mediaMuxer.addTrack(newFormat);
+//                            if (muxerAudioTrack > -1) {
+//                                mediaMuxer.start();
+//                            }
                             break;
                         default:
                             if (outputIndex > 0) {
@@ -309,7 +309,7 @@ public class AudioCodec {
     }
 
     /**
-     * 编码 pcm 到音频
+     * 编码 pcm 到音频 pcm -> aac
      * @param pcmPath
      * @param audioPath
      * @param listener
@@ -464,7 +464,7 @@ public class AudioCodec {
 
 
     /**
-     * 混合两个音频 文件
+     * 混合两个音频 文件 mp3 mp3-> aac
      * @param audioPathOne
      * @param audioPathTwo
      * @param outPath

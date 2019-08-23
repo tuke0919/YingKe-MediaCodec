@@ -1,9 +1,9 @@
-package com.yingke.mediacodec.connect.ui;
+package com.yingke.mediacodec.compose.ui;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -12,13 +12,13 @@ import com.yingke.mediacodec.SingleFragmentActivity;
 import com.yingke.mediacodec.player.PlayerLog;
 
 /**
- * MediaCodec 多个视频拼接
+ * MediaCodec多音频混音
  */
-public class MediaCodecVideoConnectActivity extends SingleFragmentActivity {
+public class MediaCodecAudioComposeActivity extends SingleFragmentActivity {
 
     public static final String TAG = "MediaCodecVideoConnectActivity";
 
-    private VideoConnectFragment mFragment;
+    private AudioMixFragment mFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +27,7 @@ public class MediaCodecVideoConnectActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        mFragment = VideoConnectFragment.newInstance();
+        mFragment = AudioMixFragment.newInstance();
         return mFragment;
     }
 
@@ -35,7 +35,7 @@ public class MediaCodecVideoConnectActivity extends SingleFragmentActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         PlayerLog.d(TAG, "option - onCreateOptionsMenu");
-        getMenuInflater().inflate(R.menu.menu_video_connect, menu);
+        getMenuInflater().inflate(R.menu.menu_audio_compose, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -50,9 +50,23 @@ public class MediaCodecVideoConnectActivity extends SingleFragmentActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         PlayerLog.d(TAG, "option - onOptionsItemSelected");
 
-        if (item.getItemId() == R.id.action_merge) {
+        if (item.getItemId() == R.id.action_multi_aac) {
             if(mFragment != null) {
-                mFragment.mergeMultiVideo();
+                mFragment.mixMultiAudio();
+            }
+            return true;
+        }
+
+        if (item.getItemId() == R.id.action_saperate) {
+            if(mFragment != null) {
+                mFragment.seperateAudio();
+            }
+            return true;
+        }
+
+        if (item.getItemId() == R.id.action_pcm_aac) {
+            if(mFragment != null) {
+                mFragment.switchPcmToAudio();
             }
             return true;
         }

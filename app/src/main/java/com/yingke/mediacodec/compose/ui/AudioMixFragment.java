@@ -1,11 +1,10 @@
-package com.yingke.mediacodec.connect.ui;
+package com.yingke.mediacodec.compose.ui;
 
 import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,9 +15,13 @@ import android.view.ViewGroup;
 
 import com.yingke.mediacodec.BaseFragment;
 import com.yingke.mediacodec.R;
+import com.yingke.mediacodec.compose.AudioCodec;
+import com.yingke.mediacodec.compose.OnAudioCodecListener;
+import com.yingke.mediacodec.compose.OnEncoderListener;
 import com.yingke.mediacodec.connect.MediaMuxerThread;
 import com.yingke.mediacodec.connect.VideoInfo;
 import com.yingke.mediacodec.player.PlayerLog;
+import com.yingke.mediacodec.preview.audio.AudioDialog;
 import com.yingke.mediacodec.preview.video.PreviewVideoActivity;
 import com.yingke.mediacodec.recorder.MediaCodecRecorderActivity;
 import com.yingke.mediacodec.utils.FileUtils;
@@ -54,10 +57,14 @@ import static com.yingke.mediacodec.recorder.MediaCodecRecorderActivity.RECORD_O
  * 最后修改人：无
  * <p>
  */
-public class VideoConnectFragment extends BaseFragment implements ILocalMediaView , BaseLocalMediaAdapter.OnLocalMediaListener {
+public class AudioMixFragment extends BaseFragment implements ILocalMediaView , BaseLocalMediaAdapter.OnLocalMediaListener {
 
-    public static final String TAG = "VideoConnectFragment";
+    public static final String TAG = "AudioMixFragment";
     public static final int REQUEST_CODE_RECORD = 100;
+
+    public static final int MODE_MIX_MULTI_AUDIO = 0;
+    public static final int MODE_SEPERATE_AUDIO = 1;
+    public static final int MODE_PCM_TO_AUDIO = 2;
 
     private View mRootView;
     private RecyclerView mRecyclerView;
@@ -70,18 +77,21 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
     // 媒体文件处理
     private LocalMediaPresenter mMediaPresenter;
 
-    public static VideoConnectFragment newInstance() {
-        return new VideoConnectFragment();
+    public int mCurrentMode = MODE_MIX_MULTI_AUDIO;
+
+    public static AudioMixFragment newInstance() {
+        return new AudioMixFragment();
     }
 
     @Override
-    public View onCreateView( LayoutInflater inflater,  ViewGroup container,  Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater,  ViewGroup container,  Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         if (mRootView == null) {
-            mRootView = inflater.inflate(R.layout.activity_media_codec_video_connect, null);
+            mRootView = inflater.inflate(R.layout.frag_audio_mix, null);
             initViews();
             initDatas();
         }
+
         ViewGroup parent = (ViewGroup) mRootView.getParent();
         if (parent != null) {
             parent.removeView(mRootView);
@@ -90,10 +100,13 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
     }
 
     public void initViews() {
+        PlayerLog.e(TAG, "---initViews---");
         mRecyclerView = mRootView.findViewById(R.id.recyclerview);
     }
 
     public void initDatas() {
+        PlayerLog.e(TAG, "---initDatas---");
+
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(4, ScreenUtils.dip2px(getContext(), 2), false));
         mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
@@ -105,10 +118,7 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
         mSelectedMedias = new ArrayList<>();
         mDialogManager = new DialogManager();
 
-
-        LocalMediaConfig config = LocalMediaConfig.getInstance().setMediaType(MediaConfig.MediaType.MEDIA_TYPE_VIDEO)
-                .setSelectionMode(MediaConfig.SelectionMode.MULTI_SELECTION)
-                .setVideoMinSecond(10);
+        setCurrentMode(MODE_MIX_MULTI_AUDIO);
         getMediaPresenter().requestMedias();
     }
 
@@ -153,7 +163,7 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
     @Override
     public void onTakePhotoOrRecord() {
         if (LocalMediaConfig.getInstance().getMediaType() == MediaConfig.MediaType.MEDIA_TYPE_VIDEO) {
-            MediaCodecRecorderActivity.startForResult(getContext(), REQUEST_CODE_RECORD);
+//            MediaCodecRecorderActivity.startForResult(getContext(), REQUEST_CODE_RECORD);
         }
 
     }
@@ -168,8 +178,9 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
 
     @Override
     public void onLocalMediaClick(LocalMediaResource media, int position, MediaConfig.MediaType mediaType) {
-        if (mediaType == MediaConfig.MediaType.MEDIA_TYPE_VIDEO) {
-            PreviewVideoActivity.start(getContext(), media.getMediaPath());
+        if (mediaType == MediaConfig.MediaType.MEDIA_TYPE_AUDIO) {
+            AudioDialog audioDialog = new AudioDialog(getContext(), media.getMediaPath());
+            audioDialog.show();
         }
     }
 
@@ -183,13 +194,96 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
         if (requestCode == REQUEST_CODE_RECORD
                 && resultCode == RESULT_OK && data != null) {
             String mediaPath = data.getStringExtra(RECORD_OUTPUT_PATH);
-            if (!TextUtils.isEmpty(mediaPath)) {
-                LocalMediaResource newResource = getNewMediaResource(mediaPath);
-                mMediaAdapter.addData(0, newResource);
-                mMediaAdapter.notifyDataSetChanged();
-            }
+//            if (!TextUtils.isEmpty(mediaPath)) {
+//                LocalMediaResource newResource = getNewMediaResource(mediaPath);
+//                mMediaAdapter.addData(0, newResource);
+//                mMediaAdapter.notifyDataSetChanged();
+//            }
         }
     }
+
+    /**
+     * 设置当前模式
+     * @param currentMode
+     */
+    public void setCurrentMode(int currentMode) {
+        mCurrentMode = currentMode;
+        switch (mCurrentMode) {
+            case MODE_MIX_MULTI_AUDIO:
+                LocalMediaConfig.getInstance().setMediaType(MediaConfig.MediaType.MEDIA_TYPE_AUDIO)
+                        .setSelectionMode(MediaConfig.SelectionMode.MULTI_SELECTION);
+                break;
+            case MODE_SEPERATE_AUDIO:
+                break;
+            case MODE_PCM_TO_AUDIO:
+                break;
+        }
+
+
+    }
+
+    /**
+     * 混合多个音频
+     */
+    public void mixMultiAudio() {
+        if (mSelectedMedias.size() > 0) {
+            String audioPathOne = mSelectedMedias.get(0).getMediaPath();
+            String audioPathTwo = mSelectedMedias.get(1).getMediaPath();
+
+            final String outputPath = FileUtils.getMergeOutputFile("mix",".aac").getAbsolutePath();
+            // 拼接开始
+            mDialogManager.showDialog(getContext());
+            // 创建混音
+            AudioCodec.createAudioMix(audioPathOne, audioPathTwo, outputPath, new OnEncoderListener() {
+                @Override
+                public void onEncodeSuc() {
+                    ToastUtil.showToastShort("混音完成：" + outputPath);
+                    // 拼接完成
+                    mDialogManager.dismissDialog();
+                    File outputFile = new File(outputPath);
+                    if (outputFile.exists()) {
+                        // 刷新系统相册
+                        if (!TextUtils.isEmpty(outputPath)) {
+                            getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(outputFile)));
+                        }
+
+                        LocalMediaResource newResource = getNewMediaResource(outputPath);
+                        // 添加新数据
+                        mMediaAdapter.addData(0, newResource);
+                        // 清楚已选媒体
+                        LocalMediaDataManager.getInstance().clearSelectedMedias();
+                        mMediaAdapter.notifyDataSetChanged();
+                    }
+
+                }
+
+                @Override
+                public void onEncodeErr() {
+                    ToastUtil.showToastShort("混音失败");
+                }
+            });
+
+        } else{
+            ToastUtil.showToastShort("请选择音频");
+        }
+    }
+
+    /**
+     * 视频分离出音频
+     */
+    public void seperateAudio() {
+
+    }
+
+    /**
+     * 把pcm文件转换成 aac
+     */
+    public void switchPcmToAudio() {
+
+
+    }
+
+
 
     /**
      * 合并多个video
@@ -249,7 +343,7 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
     }
 
     /**
-     * 创建 新视频
+     * 创建 新音频
      * @param mediaPath
      * @return
      */
@@ -261,23 +355,12 @@ public class VideoConnectFragment extends BaseFragment implements ILocalMediaVie
         // 添加新数据
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         retriever.setDataSource(mediaPath);
-        String rotation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
-        String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-        String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
         String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-
-        PlayerLog.e(TAG, "outputFile "
-                + " rotation = " + rotation
-                + " width = " + width
-                + " height = " + height
-                + " duration = " + duration);
 
         LocalMediaResource newResource = new LocalMediaResource();
         newResource.setMediaPath(mediaPath);
         newResource.setMimeType(MediaMimeType.createVideoMimeType(mediaPath));
-        newResource.setDuration(MediaMimeType.getLocalVideoDuration(mediaPath));
-        newResource.setWidth(Integer.parseInt(width));
-        newResource.setHeight(Integer.parseInt(height));
+        newResource.setDuration(Integer.parseInt(duration));
 
         return newResource;
 

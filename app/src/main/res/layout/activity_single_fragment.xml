@@ -17,6 +17,7 @@
             android:layout_height="48dp"
             android:background="?attr/colorPrimary">
         </android.support.v7.widget.Toolbar>
+
     </FrameLayout>
 
     <RelativeLayout

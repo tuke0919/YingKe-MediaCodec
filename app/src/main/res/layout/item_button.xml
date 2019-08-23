@@ -8,6 +8,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:textColor="#FFFFFF"
+        android:textColor="#4a4a4a"
          />
 </RelativeLayout>
