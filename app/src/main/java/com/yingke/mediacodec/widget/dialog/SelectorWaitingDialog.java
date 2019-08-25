@@ -35,6 +35,6 @@ public class SelectorWaitingDialog extends Dialog {
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.selector_alert_dialog_layout);
+        setContentView(R.layout.alert_dialog_layout);
     }
 }

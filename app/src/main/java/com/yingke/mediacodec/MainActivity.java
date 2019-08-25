@@ -76,7 +76,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         @Override
         public MenuHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new MenuHolder(getLayoutInflater().inflate(R.layout.item_button,parent,false));
+            return new MenuHolder(getLayoutInflater().inflate(R.layout.main_button,parent,false));
         }
 
         @Override
