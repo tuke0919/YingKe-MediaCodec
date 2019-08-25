@@ -2,6 +2,7 @@ package com.yingke.mediacodec.widget.localmedia;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -9,9 +10,11 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.text.TextUtils;
 
 
 import com.yingke.mediacodec.R;
+import com.yingke.mediacodec.player.PlayerLog;
 import com.yingke.mediacodec.widget.localmedia.config.LocalMediaConfig;
 import com.yingke.mediacodec.widget.localmedia.config.MediaMimeType;
 import com.yingke.mediacodec.widget.localmedia.entity.LocalMediaFolder;
@@ -36,6 +39,8 @@ import java.util.Locale;
  * <p>
  */
 public class LocalMediaLoader {
+
+    public static final String TAG = "LocalMediaLoader";
 
     private static final Uri QUERY_URI = MediaStore.Files.getContentUri("external");
     private static final String ORDER_BY = MediaStore.Files.FileColumns._ID + " DESC";
@@ -331,6 +336,43 @@ public class LocalMediaLoader {
     public interface LocalMediaLoadCallback {
         void loadCompleted(List<LocalMediaFolder> folders);
     }
+
+    /**
+     * 创建 新视频
+     * @param mediaPath
+     * @return
+     */
+    public static LocalMediaResource getNewVideoResource(String mediaPath) {
+        if (TextUtils.isEmpty(mediaPath)) {
+            return null;
+        }
+
+        // 添加新数据
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever.setDataSource(mediaPath);
+
+        String rotation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+        String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+        String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+        String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+
+        PlayerLog.e(TAG, "outputFile "
+                + " rotation = " + rotation
+                + " width = " + width
+                + " height = " + height
+                + " duration = " + duration);
+
+        LocalMediaResource newResource = new LocalMediaResource();
+        newResource.setMediaPath(mediaPath);
+        newResource.setMimeType(MediaMimeType.createVideoMimeType(mediaPath));
+        newResource.setDuration(MediaMimeType.getLocalVideoDuration(mediaPath));
+        newResource.setWidth(Integer.parseInt(width));
+        newResource.setHeight(Integer.parseInt(height));
+
+        return newResource;
+
+    }
+
 
 
 }

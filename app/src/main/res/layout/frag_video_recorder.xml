@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
+    <!--SurfaceView-->
     <com.yingke.mediacodec.recorder.glsurface.MediaCodecRecordGlSurfaceView
         android:id="@+id/camera_gl_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />
 
-
+    <!--控制器-->
     <RelativeLayout
         android:id="@+id/camera_gl_control"
         android:layout_width="match_parent"
@@ -20,6 +23,14 @@
         >
 
         <ImageView
+            android:id="@+id/camera_album"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="15dp"
+            />
+
+        <ImageView
             android:id="@+id/camera_start_record"
             android:layout_width="80dp"
             android:layout_height="80dp"
@@ -27,7 +38,6 @@
             android:layout_centerInParent="true"
             android:scaleType="fitXY"
             android:visibility="visible"
-
             />
 
         <ImageView
@@ -39,11 +49,37 @@
             android:padding="3dp"
             android:scaleType="fitXY"
             android:visibility="gone"
+            />
+    </RelativeLayout>
 
+    <!--计时器-->
+    <LinearLayout
+        android:id="@+id/record_time_layout"
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="#33000000"
+        >
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@mipmap/icon_red_dot"
+            android:layout_marginRight="5dp"
             />
 
+        <Chronometer
+            android:id="@+id/record_time"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:textSize="15sp"
+            android:textColor="#ffffff"
+            android:format="00:%s%s:%s%s"
+            />
+
+    </LinearLayout>
 
 
-    </RelativeLayout>
 
 </RelativeLayout>

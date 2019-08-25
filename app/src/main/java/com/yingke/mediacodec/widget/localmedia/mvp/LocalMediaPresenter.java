@@ -51,6 +51,16 @@ public class LocalMediaPresenter {
     }
 
     /**
+     * 请求媒体文件
+     * @param dialog 是否需要dialog
+     */
+    public void requestMedias(boolean dialog) {
+        if (mLocalMediaModel != null) {
+            mLocalMediaModel.requestMedias(dialog);
+        }
+    }
+
+    /**
      * 销毁
      */
     public void onDestroy() {

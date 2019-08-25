@@ -42,6 +42,9 @@ public class LocalMediaModel {
 
     private RxPermissions rxPermissions;
     private DialogManager dialogManager;
+
+    private boolean dialog;
+
     // 回调
     private LocalMediaPresenter.Callback mCallback;
 
@@ -52,6 +55,7 @@ public class LocalMediaModel {
         localMediaLoader = new LocalMediaLoader(context);
         rxPermissions = new RxPermissions(context);
         dialogManager = DialogManager.newInstance();
+        dialog = true;
     }
 
     /**
@@ -68,7 +72,9 @@ public class LocalMediaModel {
                     @Override
                     public void onNext(Boolean aBoolean) {
                         if (aBoolean) {
-                            dialogManager.showDialog(context);
+                            if (dialog) {
+                                dialogManager.showDialog(context);
+                            }
                             readLocalMedia();
                         } else {
                             ToastUtil.showToastShort(context.getString(R.string.selector_jurisdiction));
@@ -85,6 +91,15 @@ public class LocalMediaModel {
 
                     }
                 });
+
+    }
+
+    /**
+     * @param dialog
+     */
+    public void requestMedias(boolean dialog){
+        this.dialog = dialog;
+        requestMedias();
 
     }
 
@@ -130,7 +145,11 @@ public class LocalMediaModel {
                         });
 
                     }
-                    dialogManager.dismissDialog();
+
+                    if (dialog) {
+                        dialogManager.dismissDialog();
+                    }
+
                 }
             });
         } catch (Exception e) {

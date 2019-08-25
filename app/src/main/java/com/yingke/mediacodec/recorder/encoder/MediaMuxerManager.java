@@ -229,7 +229,7 @@ public class MediaMuxerManager {
         }
         dir.mkdirs();
         if (dir.canWrite()) {
-            return new File(dir, "record" + getDateTimeString() + suffix);
+            return new File(dir, "record-" + getDateTimeString() + suffix);
         }
         return null;
     }
