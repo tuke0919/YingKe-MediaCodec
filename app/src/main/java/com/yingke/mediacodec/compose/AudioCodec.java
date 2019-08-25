@@ -153,12 +153,11 @@ public class AudioCodec {
      * @param pcmSavePath
      * @param listener
      */
-    public static void decodeAudioToPCM(String audioPath, String pcmSavePath, final OnDecoderListener listener) {
+    public static void decodeAudioToPCM(String audioPath, final String pcmSavePath, final OnDecoderListener listener) {
         PlayerLog.e(TAG,"---decodeAudioToPCM-----" );
+        PlayerLog.e(TAG,"audioPath = " + audioPath + " pcmSavePath = " + pcmSavePath);
 
         try {
-
-            FileOutputStream pcmOutputStream = new FileOutputStream(pcmSavePath);
 
             final MediaExtractor audioExtractor = CodecUtil.createExtractor(audioPath);
             int extractorTrack = CodecUtil.getAndSelectTrackIndex(audioExtractor, false);
@@ -171,125 +170,142 @@ public class AudioCodec {
             final MediaFormat trackFormat = audioExtractor.getTrackFormat(extractorTrack);
 
             if (!hasAudio) {
-                ToastUtil.showToastShort("没有音频");
+                // 主线程 错误
+                Task.call(new Callable<Object>() {
+                    @Override
+                    public Object call() throws Exception {
+                        if (listener != null) {
+                            listener.onDecodeErr();
+                        }
+                        return null;
+                    }
+                },Task.UI_THREAD_EXECUTOR);
                 return;
             }
 
-            // 初始化音频的解码器
-            String mime = trackFormat.getString(MediaFormat.KEY_MIME);
-            MediaCodec audioDecoder = MediaCodec.createDecoderByType(mime);
-            audioDecoder.configure(trackFormat, null, null, 0);
-            audioDecoder.start();
+            // 有音频 子线程
+            Task.callInBackground(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    // pcm输出流
+                    FileOutputStream pcmOutputStream = new FileOutputStream(pcmSavePath);
 
-            ByteBuffer[] inputBuffers = audioDecoder.getInputBuffers();
-            ByteBuffer[] outputBuffers = audioDecoder.getOutputBuffers();
+                    // 初始化音频的解码器
+                    String mime = trackFormat.getString(MediaFormat.KEY_MIME);
+                    MediaCodec audioDecoder = MediaCodec.createDecoderByType(mime);
+                    audioDecoder.configure(trackFormat, null, null, 0);
+                    audioDecoder.start();
+
+                    ByteBuffer[] inputBuffers = audioDecoder.getInputBuffers();
+                    ByteBuffer[] outputBuffers = audioDecoder.getOutputBuffers();
 
 
-            MediaCodec.BufferInfo decodeBufferInfo = new MediaCodec.BufferInfo();
-            MediaCodec.BufferInfo inputInfo = new MediaCodec.BufferInfo();
+                    MediaCodec.BufferInfo decodeBufferInfo = new MediaCodec.BufferInfo();
+                    MediaCodec.BufferInfo inputInfo = new MediaCodec.BufferInfo();
 
-            boolean decodeEnd = false;
-            boolean inputDone = false;
+                    boolean decodeEnd = false;
+                    boolean inputDone = false;
 
-            while (!decodeEnd) {
+                    while (!decodeEnd) {
+                        PlayerLog.e(TAG, "---读取一帧---- inputDone ： " + inputDone);
+                        if (!inputDone) {
+                            // 循环读取帧
+                            for (int i = 0; i < inputBuffers.length; i++) {
+                                int inputIndex = audioDecoder.dequeueInputBuffer(TIMEOUT_USEC);
+                                if (inputIndex >= 0) {
+                                    ByteBuffer inputBuffer = inputBuffers[inputIndex];
+                                    inputBuffer.clear();
+                                    // MediaExtractor读取数据到inputBuffer中
+                                    int sampleSize = audioExtractor.readSampleData(inputBuffer, 0);
 
-                if (!inputDone) {
-                    // 循环读取帧
-                    for (int i = 0; i < inputBuffers.length; i++) {
-                        int inputIndex = audioDecoder.dequeueInputBuffer(TIMEOUT_USEC);
-                        if (inputIndex >= 0) {
-                            ByteBuffer inputBuffer = inputBuffers[inputIndex];
-                            inputBuffer.clear();
-                            // MediaExtractor读取数据到inputBuffer中
-                            int sampleSize = audioExtractor.readSampleData(inputBuffer, 0);
+                                    if (sampleSize < 0) {
+                                        // 写EOS帧，输入结束
+                                        audioDecoder.queueInputBuffer(inputIndex, 0, 0, 0L, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                                        inputDone = true;
+                                        PlayerLog.e(TAG, "---读取结束，写入解码EOS---- inputDone ： " + inputDone);
+                                    } else {
 
-                            if (sampleSize < 0) {
-                                // 写EOS帧，输入结束
-                                audioDecoder.queueInputBuffer(inputIndex, 0, 0, 0L, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                                inputDone = true;
-                            } else {
+                                        inputInfo.offset = 0;
+                                        inputInfo.size = sampleSize;
+                                        inputInfo.flags = MediaCodec.BUFFER_FLAG_SYNC_FRAME;
+                                        inputInfo.presentationTimeUs = audioExtractor.getSampleTime();
+                                        PlayerLog.e(TAG, "往解码器写入数据---当前帧的时间戳----" + inputInfo.presentationTimeUs);
 
-                                inputInfo.offset = 0;
-                                inputInfo.size = sampleSize;
-                                inputInfo.flags = MediaCodec.BUFFER_FLAG_SYNC_FRAME;
-                                inputInfo.presentationTimeUs = audioExtractor.getSampleTime();
-                                PlayerLog.e(TAG, "往解码器写入数据---当前帧的时间戳----" + inputInfo.presentationTimeUs);
+                                        audioDecoder.queueInputBuffer(inputIndex, inputInfo.offset, sampleSize, inputInfo.presentationTimeUs, 0);//通知MediaDecode解码刚刚传入的数据
+                                        // 下一帧取样处
+                                        PlayerLog.e(TAG, "--指向下一帧---- ");
 
-                                audioDecoder.queueInputBuffer(inputIndex, inputInfo.offset, sampleSize, inputInfo.presentationTimeUs, 0);//通知MediaDecode解码刚刚传入的数据
-                                // 下一帧取样处
-                                audioExtractor.advance();
+                                        audioExtractor.advance();
+                                    }
+                                }
+                            }
+                        }
+                        // 解码器输出 结束标志
+                        boolean decodeOutputDone = false;
+                        byte[] chunkPCM;
+                        while (!decodeOutputDone) {
+                            int outputIndex = audioDecoder.dequeueOutputBuffer(decodeBufferInfo, TIMEOUT_USEC);
+                            PlayerLog.e(TAG, "---读取解码器输出---- outputIndex ： " + outputIndex);
+
+                            switch (outputIndex) {
+                                case MediaCodec.INFO_TRY_AGAIN_LATER:
+                                    decodeOutputDone = true;
+                                    break;
+                                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                                    outputBuffers = audioDecoder.getOutputBuffers();
+                                    break;
+                                case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                                    break;
+                                default:
+                                    if (outputIndex > 0) {
+                                        ByteBuffer outputBuffer;
+                                        if (Build.VERSION.SDK_INT >= 21) {
+                                            outputBuffer = audioDecoder.getOutputBuffer(outputIndex);
+                                        } else {
+                                            outputBuffer = outputBuffers[outputIndex];
+                                        }
+
+                                        chunkPCM = new byte[decodeBufferInfo.size];
+                                        outputBuffer.get(chunkPCM);
+                                        outputBuffer.clear();
+                                        // 数据写入文件中
+                                        pcmOutputStream.write(chunkPCM);
+                                        pcmOutputStream.flush();
+                                        PlayerLog.e(TAG, "---释放输出流缓冲区----:::" + outputIndex);
+                                        audioDecoder.releaseOutputBuffer(outputIndex, false);
+
+                                        if ((decodeBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                                            PlayerLog.e(TAG, "---解码器 输出结束----" );
+
+                                            audioDecoder.stop();
+                                            audioDecoder.release();
+                                            decodeEnd = true;
+                                            decodeOutputDone = true;
+                                        }
+                                    }
+                                    break;
                             }
                         }
                     }
-                }
-                // 解码器输出 结束标志
-                boolean decodeOutputDone = false;
-                byte[] chunkPCM;
-                while (!decodeOutputDone) {
-                    int outputIndex = audioDecoder.dequeueOutputBuffer(decodeBufferInfo, TIMEOUT_USEC);
-                    switch (outputIndex) {
-                        case MediaCodec.INFO_TRY_AGAIN_LATER:
-                            decodeOutputDone = true;
-                            break;
-                        case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                            outputBuffers = audioDecoder.getOutputBuffers();
-                            break;
-                        case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                            // 只调用一次
-//                            MediaFormat newFormat = audioDecoder.getOutputFormat();
-//                            int muxerAudioTrack = mediaMuxer.addTrack(newFormat);
-//                            if (muxerAudioTrack > -1) {
-//                                mediaMuxer.start();
-//                            }
-                            break;
-                        default:
-                            if (outputIndex > 0) {
-                                ByteBuffer outputBuffer;
-                                if (Build.VERSION.SDK_INT >= 21) {
-                                    outputBuffer = audioDecoder.getOutputBuffer(outputIndex);
-                                } else {
-                                    outputBuffer = outputBuffers[outputIndex];
-                                }
 
-                                chunkPCM = new byte[decodeBufferInfo.size];
-                                outputBuffer.get(chunkPCM);
-                                outputBuffer.clear();
-                                // 数据写入文件中
-                                pcmOutputStream.write(chunkPCM);
-                                pcmOutputStream.flush();
-                                PlayerLog.e(TAG, "---释放输出流缓冲区----:::" + outputIndex);
-                                audioDecoder.releaseOutputBuffer(outputIndex, false);
+                    if (pcmOutputStream != null) {
+                        pcmOutputStream.close();
+                    }
 
-                                if ((decodeBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-
-                                    audioDecoder.release();
-                                    audioDecoder.stop();
-
-                                    decodeEnd = true;
-                                    decodeOutputDone = true;
-                                }
+                    // 主线程
+                    Task.call(new Callable<Object>() {
+                        @Override
+                        public Object call() throws Exception {
+                            if (listener != null) {
+                                listener.onDecodeSuc();
                             }
-                            break;
-                    }
-                }
-            }
+                            return null;
+                        }
+                    },Task.UI_THREAD_EXECUTOR);
 
-            if (pcmOutputStream != null) {
-                pcmOutputStream.close();
-            }
-
-            // 主线程
-            Task.call(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    if (listener != null) {
-                        listener.onDecodeSuc();
-                    }
                     return null;
                 }
-            },Task.UI_THREAD_EXECUTOR);
-
-
+            });
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -474,41 +490,52 @@ public class AudioCodec {
                                       final String audioPathTwo,
                                       final String outPath,
                                       final OnEncoderListener listener){
-        final HashMap<String, Boolean> decodeResultMap = new HashMap<>();
-        decodeResultMap.put(audioPathOne, false);
-        decodeResultMap.put(audioPathTwo, false);
 
         final boolean[] decodeResultSuc = new boolean[]{false, false};
         final boolean[] decodeResultErr = new boolean[]{false, false};
 
         // 音频文件名
-        String audioFileNameOne = audioPathOne.substring(audioPathOne.lastIndexOf("/"), audioPathOne.lastIndexOf("."));
+        final String audioFileNameOne = audioPathOne.substring(audioPathOne.lastIndexOf("/"), audioPathOne.lastIndexOf("."));
         final String pcmPathOne = FileUtils.getAudioPcmPath(audioFileNameOne);
+
+        PlayerLog.e(TAG, "audioFileNameOne = " + audioFileNameOne);
+        PlayerLog.e(TAG, "pcmPathOne = " + pcmPathOne);
 
         decodeAudioToPCM(audioPathOne, pcmPathOne, new OnDecoderListener() {
             @Override
             public void onDecodeSuc() {
+                PlayerLog.e(TAG, "---decodeAudioToPCM--- onDecodeSuc: audioFileNameOne = " + audioFileNameOne);
+
                 decodeResultSuc[0] = true;
             }
 
             @Override
             public void onDecodeErr() {
+                PlayerLog.e(TAG, "---decodeAudioToPCM--- onDecodeErr: audioFileNameOne = " + audioFileNameOne);
+
                 decodeResultErr[0] = true;
             }
         });
 
         // 音频文件名
-        String audioFileNameTwo = audioPathOne.substring(audioPathTwo.lastIndexOf("/"), audioPathOne.lastIndexOf("."));
+        final String audioFileNameTwo = audioPathTwo.substring(audioPathTwo.lastIndexOf("/"), audioPathTwo.lastIndexOf("."));
         final String pcmPathTwo = FileUtils.getAudioPcmPath(audioFileNameTwo);
+
+        PlayerLog.e(TAG, "audioFileNameTwo = " + audioFileNameTwo);
+        PlayerLog.e(TAG, "pcmPathTwo = " + pcmPathTwo);
 
         decodeAudioToPCM(audioPathTwo, pcmPathTwo, new OnDecoderListener() {
             @Override
             public void onDecodeSuc() {
+                PlayerLog.e(TAG, "---decodeAudioToPCM--- onDecodeSuc: audioFileNameTwo = " + audioFileNameTwo);
+
                 decodeResultSuc[1] = true;
             }
 
             @Override
             public void onDecodeErr() {
+                PlayerLog.e(TAG, "---decodeAudioToPCM--- onDecodeErr: audioFileNameTwo = " + audioFileNameTwo);
+
                 decodeResultErr[1] = true;
             }
         });
@@ -519,6 +546,10 @@ public class AudioCodec {
             public Object call() throws Exception {
                 boolean isMixAudioEnd = false;
                 while (!isMixAudioEnd){
+                    PlayerLog.e(TAG, "---isMixAudioEnd： " + isMixAudioEnd);
+
+                    PlayerLog.e(TAG, "---合成两个pcm文件，子线程---- decodeResultSuc[0] = " + decodeResultSuc[0]);
+                    PlayerLog.e(TAG, "---合成两个pcm文件，子线程---- decodeResultSuc[1] = " + decodeResultSuc[1]);
 
                     // 两个pcm都成功
                     if (decodeResultSuc[0] && decodeResultSuc[1]) {
@@ -527,13 +558,15 @@ public class AudioCodec {
                         isMixAudioEnd = true;
 
                         // 检查文件存在
-                        File pcmOne = new File(pcmPathOne);
-                        File pcmTwo = new File(pcmPathTwo);
+                        final File pcmOne = new File(pcmPathOne);
+                        final File pcmTwo = new File(pcmPathTwo);
                         if (!pcmOne.exists() || !pcmTwo.exists()) {
                             // 主线程
                             Task.call(new Callable<Object>() {
                                 @Override
                                 public Object call() throws Exception {
+                                    PlayerLog.e(TAG, "--- 有pcm文件不存在---- pcmOne = " + pcmOne.exists() + " pcmTwo = " + pcmTwo.exists() );
+
                                     if (listener != null) {
                                         listener.onEncodeErr();
                                     }
@@ -553,7 +586,7 @@ public class AudioCodec {
                             public void onEncodeSuc() {
                                 // 主线程
                                 if (listener != null) {
-                                    listener.onEncodeErr();
+                                    listener.onEncodeSuc();
                                 }
                             }
 
@@ -611,6 +644,8 @@ public class AudioCodec {
                                    int secondVol,
                                    final OnEncoderListener listener) throws IOException {
 
+        PlayerLog.e(TAG, "---audioPcmMix----");
+
         File mixedAudioFile = new File(mixedAudioOutFile);
         if (mixedAudioFile.exists()) {
             mixedAudioFile.delete();
@@ -638,6 +673,8 @@ public class AudioCodec {
         while (true) {
 
             // 两个pcm文件 同时读buffer
+            PlayerLog.e(TAG, "---两个pcm文件 同时读buffer----");
+
             for (int streamIndex = 0; streamIndex < size; streamIndex ++ ) {
                 FileInputStream inputStream = pcmFileStreams[streamIndex];
                 if (!pcmStreamsDone[streamIndex] && (inputStream.read(buffer)) != -1) {
@@ -649,6 +686,7 @@ public class AudioCodec {
             }
 
             // 混合两个pcm buffer
+            PlayerLog.e(TAG, "---混合两个pcm buffer----");
             byte[] mixBytes = nativeAudioMix(allPcmBytes, firstVol, secondVol);
             // 存放混合后的buffer
             putMixedPcmBuffer(mixBytes);
@@ -657,6 +695,8 @@ public class AudioCodec {
             Log.e(TAG, "-----混音后的数据---" + mixBytes.length + "---isStartEncode--" + isStartEncode[0]);
 
             if (!isStartEncode[0]){
+
+                PlayerLog.e(TAG, "---开始编码,混合后的 pcm buffer----");
                 // 开始编码, 子线程
                 Task.callInBackground(new Callable<Object>() {
                     @Override

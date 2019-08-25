@@ -230,7 +230,7 @@ public class AudioMixFragment extends BaseFragment implements ILocalMediaView , 
             String audioPathOne = mSelectedMedias.get(0).getMediaPath();
             String audioPathTwo = mSelectedMedias.get(1).getMediaPath();
 
-            final String outputPath = FileUtils.getMergeOutputFile("mix",".aac").getAbsolutePath();
+            final String outputPath = FileUtils.getComposeAudioOutputFile("mix",".aac").getAbsolutePath();
             // 拼接开始
             mDialogManager.showDialog(getContext());
             // 创建混音
@@ -259,6 +259,7 @@ public class AudioMixFragment extends BaseFragment implements ILocalMediaView , 
 
                 @Override
                 public void onEncodeErr() {
+                    mDialogManager.dismissDialog();
                     ToastUtil.showToastShort("混音失败");
                 }
             });
@@ -356,10 +357,11 @@ public class AudioMixFragment extends BaseFragment implements ILocalMediaView , 
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         retriever.setDataSource(mediaPath);
         String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        String mime = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
 
         LocalMediaResource newResource = new LocalMediaResource();
         newResource.setMediaPath(mediaPath);
-        newResource.setMimeType(MediaMimeType.createVideoMimeType(mediaPath));
+        newResource.setMimeType(mime);
         newResource.setDuration(Integer.parseInt(duration));
 
         return newResource;

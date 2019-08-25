@@ -85,17 +85,18 @@ public class FileUtils {
     /**
      * 合成音频 获取输出文件路径
      *
-     * @param fileName
+     * @param prefix
+     * @param suffix
      * @return 没有写权限 返回null
      */
-    public static final File getComposeAudioOutputFile(String prefix, String fileName) {
+    public static final File getComposeAudioOutputFile(String prefix, String suffix) {
         final File dir = new File(Environment.getExternalStorageDirectory(), DIR_NAME + "/" + DIR_NAME_COMPOSE_AUDIO);
         if (!dir.getParentFile().exists()) {
             dir.getParentFile().mkdir();
         }
         dir.mkdirs();
         if (dir.canWrite()) {
-            return new File(dir, prefix + "-" + fileName);
+            return new File(dir, prefix + "-" + getDateTimeString() + suffix);
         }
         return null;
     }
