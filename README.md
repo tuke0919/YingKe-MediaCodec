@@ -1,0 +1,2 @@
+# YingKe-MediaCodec
+Android MediaCodec API 实现下载网络video，MediaCodec播放器播放视频，MediaCodec录视频，MediaCodec实视频转码，MediaCodec从视频分离音频aac，MediaCodec音频解码pcm原始数据，MediaCodec多个音频进行混音，MediaCodec拼接多个视频
