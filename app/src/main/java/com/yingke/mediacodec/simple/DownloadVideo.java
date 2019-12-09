@@ -19,10 +19,10 @@ import java.util.Set;
 /**
  * 功能：MediaExtractor + MediaMuxer  分离抽取 ，合成视频
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright corp.xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/6
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>
@@ -109,15 +109,21 @@ public class DownloadVideo {
         // 复用器 audio 轨道
         int audioMuxerTrackIndex = -1;
 
+        // 创建复用器
         MediaMuxer mediaMuxer = new MediaMuxer(mVideoOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 
+        // 创建视频抽取器
         MediaExtractor videoExtractor = createExtractor();
+        // 获取并选择视频轨道
         int videoExtractorTrackIndex = getAndSelectTrackIndex(videoExtractor, true);
 
+        // 创建音频抽取器
         MediaExtractor audioExtractor = createExtractor();
+        // 获取并选择音频轨道
         int audioExtractorTrackIndex = getAndSelectTrackIndex(audioExtractor, false);
 
         if (videoExtractorTrackIndex != -1) {
+            // 获取视频轨道 媒体格式
             MediaFormat videoTrackFormat = videoExtractor.getTrackFormat(videoExtractorTrackIndex);
 
             Log.e(TAG, "doDownload : videoTrackFormat =  " );
@@ -126,9 +132,14 @@ public class DownloadVideo {
             }
 
             outputMediaFormat(videoTrackFormat);
-
+            // 复用器添加视频媒体格式，并返回复用器视频轨道
             videoMuxerTrackIndex = mediaMuxer.addTrack(videoTrackFormat);
+
+            // 抽取器 视频轨道媒体格式数据
+
+            // 最大视频大小
             maxVideoIntputSize = videoTrackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
+            // 视频帧率
             videoFrameRate = videoTrackFormat.getInteger(MediaFormat.KEY_FRAME_RATE);
 
             Log.e(TAG, "doDownload :"
@@ -145,6 +156,7 @@ public class DownloadVideo {
         }
 
         if (audioExtractorTrackIndex != -1) {
+            // 获取音频轨道 媒体格式
             MediaFormat audioTrackFormat = audioExtractor.getTrackFormat(audioExtractorTrackIndex);
 
             Log.e(TAG, "doDownload : audioTrackFormat =  " );
@@ -153,8 +165,10 @@ public class DownloadVideo {
             }
 
             outputMediaFormat(audioTrackFormat);
-
+            // 复用器添加音频媒体格式，并返回复用器音频轨道
             audioMuxerTrackIndex = mediaMuxer.addTrack(audioTrackFormat);
+
+            // 最大音频输入大小
             maxAudioIntputSize = audioTrackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
 
             Log.e(TAG, "doDownload :"
@@ -177,13 +191,14 @@ public class DownloadVideo {
         // 开始合成
         mediaMuxer.start();
 
-        // 循环直接写 视频到 muxer
+        // 循环直接写 视频到 muxer复用器
         if (videoMuxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             bufferInfo.presentationTimeUs = 0;
 
             ByteBuffer buffer = ByteBuffer.allocate(maxVideoIntputSize);
             while (!mMuxerThread.isInterrupted()) {
+                // 抽取器 读数据到buffer
                 int sampleSize = videoExtractor.readSampleData(buffer, 0);
                 if (sampleSize < 0) {
                     break;
@@ -206,9 +221,10 @@ public class DownloadVideo {
                     mCallback.onTextCallback("flags = " + bufferInfo.flags);
                     mCallback.onTextCallback("presentationTimeUs = " + bufferInfo.presentationTimeUs);
                 }
-
+                // 把buffer数据 直接写到 复用器，不经任何编码，解码
                 mediaMuxer.writeSampleData(videoMuxerTrackIndex, buffer, bufferInfo);
 
+                // 判断抽取器 是否读完
                 boolean videoExtractorDone = videoExtractor.advance();
                 if (!videoExtractorDone) {
                     break;
@@ -220,13 +236,14 @@ public class DownloadVideo {
             mCallback.onTextCallback("doDownload : videoMuxer end ");
         }
 
-        // 循环写音频 到muxer
+        // 循环写音频 到muxer复用器
         if (audioMuxerTrackIndex != -1) {
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             bufferInfo.presentationTimeUs = 0;
 
             ByteBuffer buffer = ByteBuffer.allocate(maxAudioIntputSize);
             while (!mMuxerThread.isInterrupted()) {
+                // 抽取器 读数据到buffer
                 int sampleSize = audioExtractor.readSampleData(buffer, 0);
                 if (sampleSize < 0) {
                     break;
@@ -250,9 +267,9 @@ public class DownloadVideo {
                     mCallback.onTextCallback("presentationTimeUs = " + bufferInfo.presentationTimeUs);
                 }
 
-
+                // 把buffer数据 直接写到 复用器，不经任何编码，解码
                 mediaMuxer.writeSampleData(audioMuxerTrackIndex, buffer, bufferInfo);
-
+                // 判断抽取器 是否读完
                 boolean audioExtractorDone = audioExtractor.advance();
                 if (!audioExtractorDone) {
                     break;
@@ -263,10 +280,10 @@ public class DownloadVideo {
         if (mCallback != null) {
             mCallback.onTextCallback("doDownload : audioMuxer end ");
         }
-
+        // 释放抽取器
         videoExtractor.release();
         audioExtractor.release();
-
+        // 释放复用器
         mediaMuxer.stop();
         mediaMuxer.release();
 

@@ -22,10 +22,10 @@ import java.nio.ByteBuffer;
 /**
  * 功能：使用MediaCodec 解码器实现播放视频
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright corp.xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/8
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>
@@ -276,6 +276,7 @@ public class MediaMoviePlayer {
                     mRequestTime = -1;
                     mSync.notifyAll();
                 }
+                // 死循环
                 for ( ; localIsRunning ; ) {
                     try {
 
@@ -286,12 +287,13 @@ public class MediaMoviePlayer {
                         }
 
                         if (localIsRunning) {
+                            // 根据当前的状态，判断下一步的动作
                             switch (mPlayerState) {
                                 case STATE_STOP:
                                     PlayerLog.e("processStop start:  "
                                             + " mPlayerState = " + wrapState(mPlayerState)
                                             + " localRequest = " + wrapRequest(localRequest));
-
+                                    // 当前是stop状态，根据localRequest 作出下一步
                                     localIsRunning = processStop(localRequest);
                                     break;
                                 case STATE_PREPARED:
@@ -299,20 +301,21 @@ public class MediaMoviePlayer {
                                             + " mPlayerState = " + wrapState(mPlayerState)
                                             + " localRequest = " + wrapRequest(localRequest));
 
+                                    // 当前是prepared状态，根据localRequest 作出下一步
                                     localIsRunning = processPrepared(localRequest);
                                     break;
                                 case STATE_PLAYING:
                                     PlayerLog.e("processPlaying start:  "
                                             + " mPlayerState = " + wrapState(mPlayerState)
                                             + " localRequest = " + wrapRequest(localRequest));
-
+                                    // 当前是playing状态，根据localRequest 作出下一步
                                     localIsRunning = processPlaying(localRequest);
                                     break;
                                 case STATE_PAUSED:
                                     PlayerLog.e("processPaused start:  "
                                             + " mPlayerState = " + wrapState(mPlayerState)
                                             + " localRequest = " + wrapRequest(localRequest));
-
+                                    // 当前是paused状态，根据localRequest 作出下一步
                                     localIsRunning = processPaused(localRequest);
                                     break;
                             }
@@ -1113,10 +1116,11 @@ public class MediaMoviePlayer {
                             mPauseResumeSync.wait();
                         }
                     }
-
+                    // 读一帧数据给 解码器
                     if (!mAudioInputDone) {
                         handleInputAudio();
                     }
+                    // 输出一帧数据到 AudioTrack
                     if (!mAudioOutputDone) {
                         handleOutputAudio(mCallback);
                     }
