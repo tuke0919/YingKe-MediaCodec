@@ -19,8 +19,9 @@ public class MediaMuxerActivity extends BaseActivity {
     private TextView mMuxerBtn;
     private TextView mMuxerLog;
 
-    private String mVideoNetworkUrl = "http://mov.bn.netease.com/open-movie/nos/mp4/2016/12/15/fc7ch3ggq_shd.mp4";
+//    private String mVideoNetworkUrl = "http://mov.bn.netease.com/open-movie/nos/mp4/2016/12/15/fc7ch3ggq_shd.mp4";
     private String mOutputVideoPath = Environment.getExternalStorageDirectory().getPath()+"/temp.mp4";
+    private String mVideoNetworkUrl = "http://plus-mov.bn.netease.com/open-movie/nos/mp4/2018/08/28/SDPC3ACEF_shd.mp4";
 
     private StringBuilder logSb = new StringBuilder();
 
@@ -31,6 +32,7 @@ public class MediaMuxerActivity extends BaseActivity {
         mMuxerBtn = findViewById(R.id.muxer_btn);
         mMuxerLog = findViewById(R.id.muxer_log);
         mMuxerLog.setMovementMethod(ScrollingMovementMethod.getInstance());
+        mOutputVideoPath = getExternalFilesDir("").getAbsolutePath() + "/mediacodec_download.mp4";
         mMuxerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

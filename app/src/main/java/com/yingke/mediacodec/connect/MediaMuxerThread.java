@@ -16,10 +16,10 @@ import java.util.List;
 /**
  * 功能：使用MedaiCodec做多个视频拼接
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright corp.xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/20
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>

@@ -21,10 +21,10 @@ import static android.media.MediaFormat.KEY_WIDTH;
 /**
  * 功能：
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright corp.xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/21
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>

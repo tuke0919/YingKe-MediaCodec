@@ -13,10 +13,10 @@ import java.util.LinkedList;
 /**
  * 功能：图片渲染着色器 的基类
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/7/16
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>

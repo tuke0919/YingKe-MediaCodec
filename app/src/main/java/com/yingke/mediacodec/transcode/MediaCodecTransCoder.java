@@ -426,7 +426,7 @@ public class MediaCodecTransCoder {
                                         break;
                                     }
                                 }
-
+                                // 其实是直接改变Muxer的帧格式 就行
                                 MediaFormat newFormat = MediaFormat.createVideoFormat(MIME_TYPE, mNewWidth, mNewHeight);
                                 if (sps != null && pps != null) {
                                     newFormat.setByteBuffer("csd-0", sps);

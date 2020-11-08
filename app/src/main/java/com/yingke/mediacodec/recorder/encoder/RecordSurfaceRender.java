@@ -16,10 +16,10 @@ import java.nio.FloatBuffer;
 /**
  * 功能：绘制Surface线程，将camera图像帧绘制到 视频编码器的输入Surface上，就是在向编码器写数据
  * </p>
- * <p>Copyright corp.netease.com 2018 All right reserved </p>
+ * <p>Copyright corp.xxx.com 2018 All right reserved </p>
  *
  * @author tuke 时间 2019/8/11
- * @email tuke@corp.netease.com
+ * @email
  * <p>
  * 最后修改人：无
  * <p>

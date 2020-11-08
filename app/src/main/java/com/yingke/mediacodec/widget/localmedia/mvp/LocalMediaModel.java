@@ -62,7 +62,7 @@ public class LocalMediaModel {
      * 初始化数据
      */
     public void requestMedias(){
-        rxPermissions.request(Manifest.permission.READ_EXTERNAL_STORAGE)
+        rxPermissions.request(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 .subscribe(new Observer<Boolean>() {
                     @Override
                     public void onSubscribe(Disposable d) {
